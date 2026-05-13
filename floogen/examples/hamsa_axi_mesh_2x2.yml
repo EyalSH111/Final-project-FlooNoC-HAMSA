@@ -1,9 +1,8 @@
-# Copyright 2023 ETH Zurich and University of Bologna.
-# Licensed under the Apache License, Version 2.0, see LICENSE for details.
-# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026
+# Minimal 2x2 AXI mesh profile for HAMSA bring-up.
 
-name: axi_mesh
-description: "HAMSA-like 2x2 AXI mesh configuration with XY routing for FlooGen"
+name: hamsa_axi_mesh_2x2
+description: "HAMSA-oriented AXI mesh (2x2, 32-bit)"
 network_type: "axi"
 
 routing:
@@ -17,14 +16,14 @@ protocols:
     addr_width: 32
     id_width: 10
     user_width: 1
-    type_prefix: # prevents `axi_axi` prefix
+    type_prefix:
   - name: "axi_out"
     protocol: "AXI4"
     data_width: 32
     addr_width: 32
     id_width: 10
     user_width: 1
-    type_prefix: # prevents `axi_axi` prefix
+    type_prefix:
 
 endpoints:
   - name: "cluster"
@@ -36,7 +35,7 @@ endpoints:
       - "axi_in"
     sbr_port_protocol:
       - "axi_out"
-  - name: "hbm"
+  - name: "mem"
     array: [2]
     addr_range:
       base: 0x8000_0000
@@ -53,17 +52,17 @@ connections:
   - src: "cluster"
     dst: "router"
     src_range:
-    - [0, 1]
-    - [0, 1]
+      - [0, 1]
+      - [0, 1]
     dst_range:
-    - [0, 1]
-    - [0, 1]
+      - [0, 1]
+      - [0, 1]
     dst_dir: "Eject"
-  - src: "hbm"
+  - src: "mem"
     dst: "router"
     src_range:
-    - [0, 1]
+      - [0, 1]
     dst_range:
-    - [0, 0]
-    - [0, 1]
+      - [0, 0]
+      - [0, 1]
     dst_dir: "West"

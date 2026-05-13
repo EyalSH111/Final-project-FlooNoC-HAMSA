@@ -39,13 +39,6 @@ module floo_axi_rand_slave #(
 
   `AXI_TYPEDEF_ALL(axi_xbar, addr_t, id_t, data_t, strb_t, user_t)
 
-  AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AxiCfg.AddrWidth  ),
-    .AXI_DATA_WIDTH ( AxiCfg.DataWidth  ),
-    .AXI_ID_WIDTH   ( AxiCfg.OutIdWidth ),
-    .AXI_USER_WIDTH ( AxiCfg.UserWidth  )
-  ) slave_dv [NumSlaves] (clk_i);
-
   typedef struct packed {
     logic [31:0] idx;
     logic [AxiCfg.AddrWidth-1:0] start_addr;
@@ -118,117 +111,57 @@ module floo_axi_rand_slave #(
   assign xbar_in_req = slv_port_req_i;
   assign slv_port_rsp_o = xbar_in_rsp;
 
-  for (genvar i = 0; i < NumSlaves; i++) begin : gen_assign_slvs
-    `AXI_ASSIGN_FROM_REQ(slave_dv[i], xbar_out_req[i])
-    `AXI_ASSIGN_TO_RESP(xbar_out_rsp[i], slave_dv[i])
-    `AXI_ASSIGN_TO_REQ(mon_mst_port_req_o[i], slave_dv[i])
-    `AXI_ASSIGN_TO_RESP(mon_mst_port_rsp_o[i], slave_dv[i])
-  end
+  // Deterministic simulation memory backend (no randomize()/svverification dependency).
+  // Keep monitor visibility by exposing xbar master-side traffic directly.
+  assign mon_mst_port_req_o = xbar_out_req;
+  assign mon_mst_port_rsp_o = xbar_out_rsp;
 
-  typedef axi_test::axi_rand_slave #(
-    // AXI interface parameters
-    .AW ( AxiCfg.AddrWidth  ),
-    .DW ( AxiCfg.DataWidth  ),
-    .IW ( AxiCfg.OutIdWidth ),
-    .UW ( AxiCfg.UserWidth  ),
-    // Stimuli application and test time
-    .TA ( ApplTime          ),
-    .TT ( TestTime          ),
-    // Responsiveness
-    .AX_MIN_WAIT_CYCLES   (0),
-    .AX_MAX_WAIT_CYCLES   (0),
-    .R_MIN_WAIT_CYCLES    (0),
-    .R_MAX_WAIT_CYCLES    (0),
-    .RESP_MIN_WAIT_CYCLES (0),
-    .RESP_MAX_WAIT_CYCLES (0)
-  ) axi_rand_ideal_slave_t;
+  logic [NumSlaves-1:0]                mon_w_valid;
+  logic [NumSlaves-1:0][AxiCfg.AddrWidth-1:0] mon_w_addr;
+  logic [NumSlaves-1:0][AxiCfg.DataWidth-1:0] mon_w_data;
+  logic [NumSlaves-1:0][AxiCfg.OutIdWidth-1:0] mon_w_id;
+  logic [NumSlaves-1:0][AxiCfg.UserWidth-1:0] mon_w_user;
+  axi_pkg::len_t [NumSlaves-1:0]       mon_w_beat_count;
+  logic [NumSlaves-1:0]                mon_w_last;
+  logic [NumSlaves-1:0]                mon_r_valid;
+  logic [NumSlaves-1:0][AxiCfg.AddrWidth-1:0] mon_r_addr;
+  logic [NumSlaves-1:0][AxiCfg.DataWidth-1:0] mon_r_data;
+  logic [NumSlaves-1:0][AxiCfg.OutIdWidth-1:0] mon_r_id;
+  logic [NumSlaves-1:0][AxiCfg.UserWidth-1:0] mon_r_user;
+  axi_pkg::len_t [NumSlaves-1:0]       mon_r_beat_count;
+  logic [NumSlaves-1:0]                mon_r_last;
 
-  typedef axi_test::axi_rand_slave #(
-    // AXI interface parameters
-    .AW ( AxiCfg.AddrWidth  ),
-    .DW ( AxiCfg.DataWidth  ),
-    .IW ( AxiCfg.OutIdWidth ),
-    .UW ( AxiCfg.UserWidth  ),
-    // Stimuli application and test time
-    .TA ( ApplTime          ),
-    .TT ( TestTime          ),
-    // Responsiveness
-    .AX_MIN_WAIT_CYCLES   (0),
-    .AX_MAX_WAIT_CYCLES   (5),
-    .R_MIN_WAIT_CYCLES    (0),
-    .R_MAX_WAIT_CYCLES    (5),
-    .RESP_MIN_WAIT_CYCLES (0),
-    .RESP_MAX_WAIT_CYCLES (5)
-  ) axi_rand_fast_slave_t;
-
-  typedef axi_test::axi_rand_slave #(
-    // AXI interface parameters
-    .AW ( AxiCfg.AddrWidth  ),
-    .DW ( AxiCfg.DataWidth  ),
-    .IW ( AxiCfg.OutIdWidth ),
-    .UW ( AxiCfg.UserWidth  ),
-    // Stimuli application and test time
-    .TA ( ApplTime          ),
-    .TT ( TestTime          ),
-    // Responsiveness
-    .AX_MIN_WAIT_CYCLES   (50),
-    .AX_MAX_WAIT_CYCLES   (100),
-    .R_MIN_WAIT_CYCLES    (50),
-    .R_MAX_WAIT_CYCLES    (100),
-    .RESP_MIN_WAIT_CYCLES (50),
-    .RESP_MAX_WAIT_CYCLES (100)
-  ) axi_rand_slow_slave_t;
-
-  // axi slave
-  axi_rand_slow_slave_t axi_rand_slow_slave[NumSlaves];
-  axi_rand_fast_slave_t axi_rand_fast_slave[NumSlaves];
-  axi_rand_ideal_slave_t axi_rand_ideal_slave[NumSlaves];
-
-  if (SlaveType == floo_test_pkg::SlowSlave) begin : gen_slow_slaves
-    for (genvar i = 0; i < NumSlaves; i++) begin : gen_slow_slaves
-      initial begin
-        axi_rand_slow_slave[i] = new( slave_dv[i] );
-        axi_rand_slow_slave[i].reset();
-        @(posedge rst_ni)
-        axi_rand_slow_slave[i].run();
-      end
-    end
-  end else if (SlaveType == floo_test_pkg::FastSlave) begin : gen_fast_slaves
-    for (genvar i = 0; i < NumSlaves; i++) begin : gen_fast_slaves
-      initial begin
-        axi_rand_fast_slave[i] = new( slave_dv[i] );
-        axi_rand_fast_slave[i].reset();
-        @(posedge rst_ni)
-        axi_rand_fast_slave[i].run();
-      end
-    end
-  end else if (SlaveType == floo_test_pkg::IdealSlave) begin : gen_fast_slaves
-    for (genvar i = 0; i < NumSlaves; i++) begin : gen_fast_slaves
-      initial begin
-        axi_rand_ideal_slave[i] = new( slave_dv[i] );
-        axi_rand_ideal_slave[i].reset();
-        @(posedge rst_ni)
-        axi_rand_ideal_slave[i].run();
-      end
-    end
-  end else if (SlaveType == floo_test_pkg::MixedSlave) begin : gen_mixed_slaves
-    for (genvar i = 0; i < NumSlaves; i++) begin : gen_mixed_slaves
-      if (i % 2 == 0) begin : gen_slow_slaves
-        initial begin
-          axi_rand_slow_slave[i] = new( slave_dv[i] );
-          axi_rand_slow_slave[i].reset();
-          @(posedge rst_ni)
-          axi_rand_slow_slave[i].run();
-        end
-      end else begin : gen_fast_slaves
-        initial begin
-          axi_rand_fast_slave[i] = new( slave_dv[i] );
-          axi_rand_fast_slave[i].reset();
-          @(posedge rst_ni)
-          axi_rand_fast_slave[i].run();
-        end
-      end
-    end
-  end
+  axi_sim_mem #(
+    .AddrWidth         ( AxiCfg.AddrWidth  ),
+    .DataWidth         ( AxiCfg.DataWidth  ),
+    .IdWidth           ( AxiCfg.OutIdWidth ),
+    .UserWidth         ( AxiCfg.UserWidth  ),
+    .NumPorts          ( NumSlaves         ),
+    .axi_req_t         ( axi_xbar_req_t    ),
+    .axi_rsp_t         ( axi_xbar_resp_t   ),
+    .WarnUninitialized ( 1'b0              ),
+    .UninitializedData ( "zeros"           ),
+    .ApplDelay         ( ApplTime          ),
+    .AcqDelay          ( TestTime          )
+  ) i_axi_sim_mem (
+    .clk_i             ( clk_i             ),
+    .rst_ni            ( rst_ni            ),
+    .axi_req_i         ( xbar_out_req      ),
+    .axi_rsp_o         ( xbar_out_rsp      ),
+    .mon_w_valid_o     ( mon_w_valid       ),
+    .mon_w_addr_o      ( mon_w_addr        ),
+    .mon_w_data_o      ( mon_w_data        ),
+    .mon_w_id_o        ( mon_w_id          ),
+    .mon_w_user_o      ( mon_w_user        ),
+    .mon_w_beat_count_o( mon_w_beat_count  ),
+    .mon_w_last_o      ( mon_w_last        ),
+    .mon_r_valid_o     ( mon_r_valid       ),
+    .mon_r_addr_o      ( mon_r_addr        ),
+    .mon_r_data_o      ( mon_r_data        ),
+    .mon_r_id_o        ( mon_r_id          ),
+    .mon_r_user_o      ( mon_r_user        ),
+    .mon_r_beat_count_o( mon_r_beat_count  ),
+    .mon_r_last_o      ( mon_r_last        )
+  );
 
 endmodule

@@ -11,10 +11,10 @@
 ${router.table.render()}
 % endif
 
-${req_type} [${len(router.incoming)-1}:0] ${router.name}_req_in;
-${rsp_type} [${len(router.incoming)-1}:0] ${router.name}_rsp_out;
-${req_type} [${len(router.outgoing)-1}:0] ${router.name}_req_out;
-${rsp_type} [${len(router.outgoing)-1}:0] ${router.name}_rsp_in;
+${req_type} ${router.name}_req_in [${len(router.incoming)-1}:0];
+${rsp_type} ${router.name}_rsp_out [${len(router.incoming)-1}:0];
+${req_type} ${router.name}_req_out [${len(router.outgoing)-1}:0];
+${rsp_type} ${router.name}_rsp_in [${len(router.outgoing)-1}:0];
 
 % for i, link in enumerate(router.incoming):
   % if link is not None:

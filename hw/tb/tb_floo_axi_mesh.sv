@@ -16,8 +16,8 @@ module tb_floo_axi_mesh;
   localparam time ApplTime = 2ns;
   localparam time TestTime = 8ns;
 
-  localparam int unsigned NumX = 4;
-  localparam int unsigned NumY = 4;
+  localparam int unsigned NumX = 2;
+  localparam int unsigned NumY = 2;
   localparam int unsigned NumHBMChannels = NumY;
   localparam int unsigned NumMax = (NumX > NumY) ? NumX : NumY;
 
@@ -26,8 +26,8 @@ module tb_floo_axi_mesh;
   localparam int unsigned FifoDepth = 100;
 
   typedef axi_in_addr_t addr_t;
-  localparam int unsigned HBMLatency = 100;
-  localparam addr_t HBMSize = 48'h10000; // 64KB
+  localparam int unsigned HBMLatency = 16;
+  localparam addr_t HBMSize = 32'h10000; // 64KB test memory target
   localparam addr_t MemSize = HBMSize;
 
   logic clk, rst_n;

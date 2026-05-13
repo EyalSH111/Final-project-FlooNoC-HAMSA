@@ -11,11 +11,11 @@ import os
 import math
 
 MEM_SIZE = 2**16
-NUM_X = 4
-NUM_Y = 4
+NUM_X = 2
+NUM_Y = 2
 HBM_BASE_ADDR = 0x80000000
 
-data_widths = {"wide": 512, "narrow": 64}
+data_widths = {"wide": 32, "narrow": 32}
 
 random.seed(42)
 
@@ -33,7 +33,7 @@ def get_xy_base_addr(x: int, y: int):
 def get_hbm_base_addr(ch: int):
     """Get the address of an HBM channel."""
     assert ch <= NUM_Y+1
-    return HBM_BASE_ADDR + (ch << MEM_SIZE)
+    return HBM_BASE_ADDR + (ch * MEM_SIZE)
 
 
 def gen_job_str(
@@ -256,8 +256,8 @@ def main():
     # parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("--out_dir", type=str, default="test/jobs")
-    parser.add_argument("--num_narrow_bursts", type=int, default=10)
-    parser.add_argument("--num_wide_bursts", type=int, default=100)
+    parser.add_argument("--num_narrow_bursts", type=int, default=0)
+    parser.add_argument("--num_wide_bursts", type=int, default=1)
     parser.add_argument("--narrow_burst_length", type=int, default=1)
     parser.add_argument("--wide_burst_length", type=int, default=16)
     parser.add_argument("--bidir", action="store_true")

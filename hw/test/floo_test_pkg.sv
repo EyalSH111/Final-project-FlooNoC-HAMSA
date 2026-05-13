@@ -16,8 +16,8 @@ package floo_test_pkg;
   } slave_type_e;
 
   // System parameters
-  localparam int unsigned NumX = 4;
-  localparam int unsigned NumY = 4;
+  localparam int unsigned NumX = 2;
+  localparam int unsigned NumY = 2;
 
   // Router parameters
   localparam int unsigned NumRoutes = 5;
@@ -46,10 +46,10 @@ package floo_test_pkg;
   // Axi chimney parameters
   localparam floo_pkg::axi_cfg_t AxiCfg = '{
     AddrWidth: 32,
-    DataWidth: 64,
+    DataWidth: 32,
     UserWidth: 1,
-    InIdWidth: 3,
-    OutIdWidth: 3
+    InIdWidth: 10,
+    OutIdWidth: 10
   };
 
   localparam floo_pkg::axi_cfg_t AxiCfgN = '{

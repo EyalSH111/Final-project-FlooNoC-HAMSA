@@ -51,10 +51,10 @@ module floo_axi_router #(
   /// (only used for `RouteAlgo == IdTable`)
   input  addr_rule_t [NumAddrRules-1:0] id_route_map_i,
   /// Input and output links
-  input   floo_req_t [NumInputs-1:0] floo_req_i,
-  input   floo_rsp_t [NumOutputs-1:0] floo_rsp_i,
-  output  floo_req_t [NumOutputs-1:0] floo_req_o,
-  output  floo_rsp_t [NumInputs-1:0] floo_rsp_o
+  input   floo_req_t floo_req_i [NumInputs-1:0],
+  input   floo_rsp_t floo_rsp_i [NumOutputs-1:0],
+  output  floo_req_t floo_req_o [NumOutputs-1:0],
+  output  floo_rsp_t floo_rsp_o [NumInputs-1:0]
 );
 
   typedef logic [AxiCfg.AddrWidth-1:0] axi_addr_t;

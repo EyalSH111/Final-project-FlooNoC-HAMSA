@@ -202,9 +202,12 @@ init-pd:
 # Phony targets #
 #################
 
-.PHONY: all clean build
+.PHONY: all clean build gen-hamsa-mesh
 
-all: compile-vsim run-sim-batch
+gen-hamsa-mesh:
+	uv run floogen rtl -c floogen/examples/hamsa_axi_mesh_2x2.yml -o generated
+
+all: compile-vsim run-vsim-batch
 clean: clean-vsim clean-spyglass clean-jobs clean-sources clean-vcs
 build: compile-vsim
 run: run-vsim

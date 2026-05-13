@@ -100,3 +100,9 @@ reviewdog
 
 # Physical design repository
 pd
+venv/
+
+compile.do
+compile.tcl
+hw/test/jobs_read/
+hw/test/jobs_write/

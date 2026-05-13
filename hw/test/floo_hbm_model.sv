@@ -34,38 +34,6 @@ module floo_hbm_model #(
   axi_req_t [NumChannels-1:0] hbm_req;
   axi_rsp_t [NumChannels-1:0] hbm_rsp;
 
-  AXI_BUS_DV #(
-    .AXI_ADDR_WIDTH ( AddrWidth   ),
-    .AXI_DATA_WIDTH ( DataWidth   ),
-    .AXI_ID_WIDTH   ( IdWidth     ),
-    .AXI_USER_WIDTH ( UserWidth   )
-  ) slave_dv [NumChannels] (clk_i);
-
-  typedef axi_test::axi_rand_slave #(
-    // AXI interface parameters
-    .AW ( AddrWidth ),
-    .DW ( DataWidth ),
-    .IW ( IdWidth   ),
-    .UW ( UserWidth ),
-    // Stimuli application and test time
-    .TA ( TA  ),
-    .TT ( TT  ),
-    // Responsiv,eness
-    .AX_MIN_WAIT_CYCLES   (0),
-    .AX_MAX_WAIT_CYCLES   (0),
-    .R_MIN_WAIT_CYCLES    (0),
-    .R_MAX_WAIT_CYCLES    (0),
-    .RESP_MIN_WAIT_CYCLES (0),
-    .RESP_MAX_WAIT_CYCLES (0)
-  ) axi_rand_slave_t;
-
-  axi_rand_slave_t axi_rand_slave [NumChannels];
-
-  for (genvar i = 0; i < NumChannels; i++) begin : gen_assign_slvs
-    `AXI_ASSIGN_FROM_REQ(slave_dv[i], hbm_req[i])
-    `AXI_ASSIGN_TO_RESP(hbm_rsp[i], slave_dv[i])
-  end
-
 
   for (genvar i = 0; i < NumChannels; i++) begin : gen_channels
     axi_multicut #(
@@ -87,13 +55,53 @@ module floo_hbm_model #(
     );
   end
 
-  for (genvar i = 0; i < NumChannels; i++) begin : gen_rand_slaves
-    initial begin
-      axi_rand_slave[i] = new( slave_dv[i] );
-      axi_rand_slave[i].reset();
-      @(posedge rst_ni)
-      axi_rand_slave[i].run();
-    end
-  end
+  logic [NumChannels-1:0] mon_w_valid;
+  logic [NumChannels-1:0][AddrWidth-1:0] mon_w_addr;
+  logic [NumChannels-1:0][DataWidth-1:0] mon_w_data;
+  logic [NumChannels-1:0][IdWidth-1:0] mon_w_id;
+  logic [NumChannels-1:0][UserWidth-1:0] mon_w_user;
+  axi_pkg::len_t [NumChannels-1:0] mon_w_beat_count;
+  logic [NumChannels-1:0] mon_w_last;
+  logic [NumChannels-1:0] mon_r_valid;
+  logic [NumChannels-1:0][AddrWidth-1:0] mon_r_addr;
+  logic [NumChannels-1:0][DataWidth-1:0] mon_r_data;
+  logic [NumChannels-1:0][IdWidth-1:0] mon_r_id;
+  logic [NumChannels-1:0][UserWidth-1:0] mon_r_user;
+  axi_pkg::len_t [NumChannels-1:0] mon_r_beat_count;
+  logic [NumChannels-1:0] mon_r_last;
+
+  // Deterministic memory backend, no randomize()/license dependency.
+  axi_sim_mem #(
+    .AddrWidth         ( AddrWidth   ),
+    .DataWidth         ( DataWidth   ),
+    .IdWidth           ( IdWidth     ),
+    .UserWidth         ( UserWidth   ),
+    .NumPorts          ( NumChannels ),
+    .axi_req_t         ( axi_req_t   ),
+    .axi_rsp_t         ( axi_rsp_t   ),
+    .WarnUninitialized ( 1'b0        ),
+    .UninitializedData ( "zeros"     ),
+    .ApplDelay         ( TA          ),
+    .AcqDelay          ( TT          )
+  ) i_axi_sim_mem (
+    .clk_i             ( clk_i             ),
+    .rst_ni            ( rst_ni            ),
+    .axi_req_i         ( hbm_req           ),
+    .axi_rsp_o         ( hbm_rsp           ),
+    .mon_w_valid_o     ( mon_w_valid       ),
+    .mon_w_addr_o      ( mon_w_addr        ),
+    .mon_w_data_o      ( mon_w_data        ),
+    .mon_w_id_o        ( mon_w_id          ),
+    .mon_w_user_o      ( mon_w_user        ),
+    .mon_w_beat_count_o( mon_w_beat_count  ),
+    .mon_w_last_o      ( mon_w_last        ),
+    .mon_r_valid_o     ( mon_r_valid       ),
+    .mon_r_addr_o      ( mon_r_addr        ),
+    .mon_r_data_o      ( mon_r_data        ),
+    .mon_r_id_o        ( mon_r_id          ),
+    .mon_r_user_o      ( mon_r_user        ),
+    .mon_r_beat_count_o( mon_r_beat_count  ),
+    .mon_r_last_o      ( mon_r_last        )
+  );
 
 endmodule
