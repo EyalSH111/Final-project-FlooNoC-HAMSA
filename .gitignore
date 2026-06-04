@@ -1,8 +1,8 @@
 *tmp*
 
-# Simulation / build artifacts
-helloworld/
-helloworld.*/
+# Simulation run directories (repo root only — not src/.../apps/helloworld)
+/helloworld/
+/helloworld.*/
 fpgnix_smile/
 */xrun.log
 xrun.log
