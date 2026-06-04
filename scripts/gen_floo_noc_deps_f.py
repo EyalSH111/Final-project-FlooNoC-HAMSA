@@ -19,7 +19,7 @@ DEPS_SOURCES = (
     # packages first
     "src/ips/common_cells/src/cf_math_pkg.sv",
     "src/ips/floo_noc/xrun_compat/axi_sim/axi_pkg.sv",
-    "src/ips/floo_noc/xrun_compat/axi_sim/axi_intf.sv",
+    # not axi_intf.sv — duplicates HAMSA AXI_BUS in pulpenix/src/soc/includes/axi_bus.sv
     # HAMSA common_cells (shared with riscv-dbg / pulpenix — compile once)
     "src/ips/common_cells/src/sync.sv",
     "src/ips/common_cells/src/binary_to_gray.sv",

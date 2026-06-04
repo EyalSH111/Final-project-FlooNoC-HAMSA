@@ -4,6 +4,7 @@
 +incdir+$PULP_ENV/src/ips/floo_noc/hw/include
 +incdir+$PULP_ENV/src/ips/common_cells/include
 +incdir+$PULP_ENV/src/ips/floo_noc/deps/axi/include
++incdir+$PULP_ENV/src/ips/pulpenix/src/soc/includes
 // Never +incdir vendor common_cells RTL; deps/common_cells/vendor_src_not_for_xrun is reference only
 
 -f $PULP_ENV/src/ips/floo_noc/floo_noc_deps.f
@@ -33,5 +34,4 @@ $PULP_ENV/src/ips/floo_noc/hw/floo_output_arbiter.sv
 $PULP_ENV/src/ips/floo_noc/xrun_compat/floo_axi_chimney.sv
 $PULP_ENV/src/ips/floo_noc/hw/floo_router.sv
 $PULP_ENV/src/ips/floo_noc/hw/floo_axi_router.sv
-
-$PULP_ENV/src/ips/floo_noc/hamsa_floo_xtrn_glue.sv
+// hamsa_floo_xtrn_glue.sv: compiled from fpgnix_tb.f after floo_hamsa_pkg.sv
