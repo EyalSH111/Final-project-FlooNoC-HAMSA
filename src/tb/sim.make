@@ -240,11 +240,15 @@ endif
 xrun-errors:
 	@grep '\*E' $(APP_RUN_DIR)/xrun.log 2>/dev/null | head -20 || echo "No xrun.log or no *E lines in $(APP_RUN_DIR)/"
 
+.PHONY: fix-floo-xrun-deps
+fix-floo-xrun-deps:
+	bash $(PULP_ENV)/scripts/fix_floo_xrun_dupuni.sh
+
 .PHONY: compile
 ifeq ($(FLOO_NOC_REGEN), 1)
-compile: gen_floo_noc_irun_f ${LIBRARIES} ${APP_RUN_DIR}/slm_files/app_instr.mif
+compile: fix-floo-xrun-deps gen_floo_noc_irun_f ${LIBRARIES} ${APP_RUN_DIR}/slm_files/app_instr.mif
 else
-compile: ${LIBRARIES} ${APP_RUN_DIR}/slm_files/app_instr.mif
+compile: fix-floo-xrun-deps ${LIBRARIES} ${APP_RUN_DIR}/slm_files/app_instr.mif
 endif
 	echo COMPILED
 

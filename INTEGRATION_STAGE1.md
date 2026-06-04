@@ -18,6 +18,16 @@ make -f $PULP_ENV/src/tb/sim.make APP=helloworld
 
 FlooNoC RTL is vendored under `src/ips/floo_noc/` (`floo_noc.f` + `floo_noc_deps.f`). No `$FLOO_NOC_ROOT` required.
 
+### If you see `*E,DUPUNI` (duplicate `common_cells`)
+
+1. `git pull` on branch `ddp23_pnx_PoC`, **or** run `bash scripts/fix_floo_xrun_dupuni.sh` (works even if pull is behind).
+2. Confirm: `grep -c 'floo_noc/deps/common_cells/src' src/ips/floo_noc/floo_noc_deps.f` → **0**
+3. Confirm: `grep -c 'src/ips/common_cells' src/ips/floo_noc/floo_noc_deps.f` → **>0**
+4. Confirm: `test ! -d src/ips/floo_noc/deps/common_cells/src` (optional; rename hides vendor RTL)
+5. `rm -rf helloworld/xcelium.d helloworld/INCA_libs` then rebuild.
+
+See `src/ips/floo_noc/deps/README_XRUN.md`.
+
 ## Simulation checks
 
 ### Normal run (chimney enabled)
@@ -28,6 +38,8 @@ Expect UART helloworld plus log lines:
 [FLOO_MON] chimney floo_req_o.valid ...
 [FLOO_MON] SUMMARY: cumulative flits=<N>
 [FLOO_MON] PASS: non-zero flit activity through FlooNoC chimney
+
+Log checks: `grep FLOO_MON helloworld/xrun.log` and `grep 'FLOO_MON.*PASS'` (not `grep '[FLOO_MON] PASS'` — the line includes `: non-zero...`).
 ```
 
 North loopback in `fpgnix_tb.v` registers `floo_req_o` → `floo_req_i` (and rsp) to stimulate mesh port activity.

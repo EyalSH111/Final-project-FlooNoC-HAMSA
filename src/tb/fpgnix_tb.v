@@ -288,7 +288,24 @@ assign fpgnix.floo_req_i = floo_req_i_lb;
 assign fpgnix.floo_rsp_i = floo_rsp_i_lb;
 
 integer floo_flit_count;
-initial floo_flit_count = 0;
+reg     floo_mon_reported;
+initial begin
+    floo_flit_count = 0;
+    floo_mon_reported = 1'b0;
+end
+
+task floo_mon_report;
+    begin
+        if (!floo_mon_reported) begin
+            floo_mon_reported = 1'b1;
+            $display("[FLOO_MON] SUMMARY: cumulative flits=%0d", floo_flit_count);
+            if (floo_flit_count == 0)
+                $display("[FLOO_MON] FAIL: zero flits observed on u_hamsa_chimney.floo_req_o");
+            else
+                $display("[FLOO_MON] PASS: non-zero flit activity through FlooNoC chimney");
+        end
+    end
+endtask
 
 always @(posedge floo_tb_clk) begin
     if (fpgnix.vqm_msystem_wrap.msystem.u_hamsa_chimney.floo_req_o.valid) begin
@@ -298,12 +315,17 @@ always @(posedge floo_tb_clk) begin
     end
 end
 
+// XRUN often skips `final` when the testbench calls $finish; schedule an explicit report too.
+initial begin : floo_mon_watchdog
+    integer delay_ns;
+    delay_ns = 200_000_000; // 200 ms @ 1ns timescale (override: +FLOO_MON_DELAY=<ns>)
+    void'($value$plusargs("FLOO_MON_DELAY=%d", delay_ns));
+    #(delay_ns);
+    floo_mon_report();
+end
+
 final begin
-    $display("[FLOO_MON] SUMMARY: cumulative flits=%0d", floo_flit_count);
-    if (floo_flit_count == 0)
-        $display("[FLOO_MON] FAIL: zero flits observed on u_hamsa_chimney.floo_req_o");
-    else
-        $display("[FLOO_MON] PASS: non-zero flit activity through FlooNoC chimney");
+    floo_mon_report();
 end
 
 endmodule

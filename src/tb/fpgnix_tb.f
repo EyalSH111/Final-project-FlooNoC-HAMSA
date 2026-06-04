@@ -1,5 +1,5 @@
 //INCDIRS
-+INCDIR+$PULP_ENV/src/
+// Do not use +INCDIR+$PULP_ENV/src/ — XRUN can pick up floo_noc/deps/*.sv and cause *E,DUPUNI
 +INCDIR+$PULP_ENV/src/soc/
 +INCDIR+$PULP_ENV/src/soc/includes/
 //+INCDIR+$PULP_ENV/src/soc/flash/
