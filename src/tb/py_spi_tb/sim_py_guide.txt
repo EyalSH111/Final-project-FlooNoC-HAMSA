@@ -1,0 +1,56 @@
+
+
+
+
+# Stand-alone basic simulation (Enics IRUN Environment)
+
+#--------------------------------------------------------------------------------------------
+
+**# Option #1 , python control process runs in background from same terminal**
+    
+    generic
+    cd $ws/ddp23_pulpenix/ddp23_pnx    
+    source nx_setup.sh
+    cd $ws/simulation
+       
+    qrun $PULP_ENV/src/tb/py_spi_tb/scr/make_run_py.sh idle_loop test_example.py   # Example can be any desired PY test and Hamsa running SW app
+
+    # Notice: order of python and simulation prints might be confusing due to display output buffering etc ..
+
+    # to run with probe for simvision waves debug
+    cp $PULP_ENV/src/tb/py_spi_tb/scr/cp ./probe_dbg.tcl $PULP_ENV/src/tb/py_spi_tb/scr/ .
+    edit locally probe_dbg.tcl for your desired scope (default is all)
+    
+    qrun $PULP_ENV/src/tb/py_spi_tb/scr/make_run_py_probe.sh  idle_loop test_example.py  # Example
+ 
+   
+
+#--------------------------------------------------------------------------------------------
+ 
+**# Option #2 , python and simulation sessions run from separate terminals**
+    
+    # In this mode you first need to open two terminals on the same working server by following steps:
+        
+    
+    qrun xterm & 
+    # A new "working server" terminal is opened go to the new terminal and again do:
+
+    xterm &  # with out qrun , an additional terminal is opened
+
+    # Now you have two terminals on same working server, in each of them do:
+    generic
+    cd $ws/ddp23_pulpenix/ddp23_pnx    
+    source nx_setup.sh
+    cd $ws/simulation
+
+    
+    # on terminal #1 run:
+    python $PULP_ENV/src/tb/py_spi_tb/py/py_tests/test_example.py  # Example
+    
+    # on terminal #2 run:   
+    ddp23_make APP=idle_loop XRUN_FLAGS="+define+ENABLE_SPI_PY_TB" # example, can be any desired Hamsa running SW app
+    
+    # to run with probe for simvision waves debug
+    ... TBC PROBE COMMAND
+
+   

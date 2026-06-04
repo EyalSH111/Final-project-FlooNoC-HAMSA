@@ -1,0 +1,8 @@
+-incdir $NEGEV_IP/design/crgn/soc_building_blocks/hdl
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/cbus2apb.v
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/generic_io_dft_in.v
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/generic_io_dft_out.v
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/generic_lfsr.v
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/generic_misr.v
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/generic_fifo_env_a256d37_ram.v
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/generic_fifo_env_a256d35_ram.v

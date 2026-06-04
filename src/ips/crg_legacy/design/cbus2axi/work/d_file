@@ -1,0 +1,4 @@
+-incdir $PULP_ENV/src/ips/crg_legacy/design/cbus2axi/hdl
+$PULP_ENV/src/ips/crg_legacy/design/cbus2axi/hdl/axi_mstr_if.v
+$PULP_ENV/src/ips/crg_legacy/design/cbus2axi/hdl/cbus2axi_top.v
+$PULP_ENV/src/ips/crg_legacy/design/cbus2axi/hdl/cbus_mstr_if.v

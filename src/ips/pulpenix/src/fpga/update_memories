@@ -1,0 +1,18 @@
+#!/bin/bash
+
+echo "*** UPDATE_MIF (update_mif.log) ***"
+cp rev_1/proj_1_app_instr*.mif .
+cp rev_1/proj_1_app_data*.mif .
+quartus_cdb --update_mif fpgnix > update_mif.log
+rm ./proj_1_app_instr*.mif
+rm ./proj_1_app_data*mif
+
+echo "*** ASM (update_asm.log) ***"
+quartus_asm fpgnix > update_asm.log
+
+echo "*** JIC (jic.log) ***"
+quartus_cpf -c output_files/fpgnix.cof > jic.log
+
+echo "*** SVF (update_svf.log) ***"
+quartus_cpf -c -q 25MHz -g 3.3 -n p output_files/fpgnix.sof output_files/fpgnix.svf > update_svf.log
+

@@ -1,0 +1,29 @@
+*tmp*
+
+# Simulation / build artifacts
+helloworld/
+helloworld.*/
+fpgnix_smile/
+*/xrun.log
+xrun.log
+irun.log
+*.log
+*.shm/
+*.dsn
+*.trn
+*.history
+*.key
+*.diag
+INCA_libs/
+xcelium.d/
+*.o
+*.so
+*.elf
+slm_files/
+build/
+
+# Nested git checkouts from vendored copies (do not commit as submodules)
+src/ips/floo_noc/deps/**/.git/
+
+# Legacy FlooNoC external flow (not used in Stage-1)
+src/tb/floo_noc_irun.f

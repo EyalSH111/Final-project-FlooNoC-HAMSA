@@ -1,0 +1,8 @@
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/jupiter_functions.v
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/apb2cbus.v
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/sc_fifo.v
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/intc.v
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/sram_ocp_if.v
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/generic_clk_div.v
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/phy_gclk.v
+$NEGEV_IP/design/crgn/soc_building_blocks/hdl/generic_fifo.v

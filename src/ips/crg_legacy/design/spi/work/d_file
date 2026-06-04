@@ -1,0 +1,9 @@
+$PULP_ENV/src/ips/crg_legacy/design/spi/hdl/spi_clkgen.v
+$PULP_ENV/src/ips/crg_legacy/design/spi/hdl/spi_cntif.v
+$PULP_ENV/src/ips/crg_legacy/design/spi/hdl/spi_core.v
+$PULP_ENV/src/ips/crg_legacy/design/spi/hdl/spi_machine.v
+$PULP_ENV/src/ips/crg_legacy/design/spi/hdl/spi_sfi_mm.v
+$PULP_ENV/src/ips/crg_legacy/design/spi/hdl/spi_shifter.v
+$PULP_ENV/src/ips/crg_legacy/design/spi/hdl/spi_sync.v
+$PULP_ENV/src/ips/crg_legacy/design/spi/hdl/spi.v
+$PULP_ENV/src/ips/crg_legacy/design/spi/hdl/spi_top.v

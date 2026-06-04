@@ -1,0 +1,23 @@
+
+Guidelines for hierarchical FPGA synthesis 
+==========================================
+
+General:
+
+In case of changes at SOC/Core level a new hierarchical VQM instantiated at fpgnix_hir  is required
+
+Currently available only for Enics system as Synplify is required to work around Quartus limitations
+
+vqm_msystem_wrap.v level and below - compiled by Synplify generating a block box VQM
+Above msystem meaning fpgnix and xbox - compiled by Quartus.
+
+
+On Enics environment go to:
+ddp23_pnx/src/ips/pulpenix/src/fpga
+
+qrun ./vqm_run_msystem_synplify.sh
+
+In case of failure check messages at : rev_1/synlog/report/vqm_msystem_wrap_compiler_errors.txt
+
+Go to FPGA compilation windows environment (repo ddp23_fpgnix_win)
+and proceed with guidelines at ddp23_fpgnix_win/README.md

@@ -1,0 +1,5 @@
+$PULP_ENV/src/ips/crg_legacy/design/gp_dma/hdl/gp_dma_arb.v
+$PULP_ENV/src/ips/crg_legacy/design/gp_dma/hdl/gp_dma_fifo.v
+$PULP_ENV/src/ips/crg_legacy/design/gp_dma/hdl/gp_dma_regs.v
+$PULP_ENV/src/ips/crg_legacy/design/gp_dma/hdl/gp_dma.v
+$PULP_ENV/src/ips/crg_legacy/design/gp_dma/hdl/gp_dma_top.v

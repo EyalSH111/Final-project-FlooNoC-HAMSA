@@ -1,0 +1,196 @@
+##########################################
+Date (DD/MM/YYYY)  - 22.01.2008.
+
+Model name         - S25FL064P
+
+Vendor             - Spansion LLC
+
+Publication ID     - SPANSION, Rev.16 Issue Date: November 7, 2007
+
+VITAL model author -  Dragisa Stanojkovic
+                      d-stanojkovic@hdl-dh.com
+##########################################
+##########################################
+INITIAL RELEASE
+
+# Release Label             => vital-amd-REL-s25fl064p-2008-01-22-1.tar.gz
+# Release Date (DD/MM/YYYY) => 22/01/2008
+# Release Version           => 1.0
+
+##########################################
+RELEASE 1.1
+
+# Release Label             => vital-amd-REL-s25fl064p-2008-02-20-2.tar.gz
+# Release Date (DD/MM/YYYY) => 20/02/2008
+# Release Version           => 1.1
+
+# Bugs fixed (from previous release)
+- Quad functionality issue
+
+# Files modified (from previous release)
+- s25fl064p.vhd
+- s25fl064p.v
+- testbench_s25fl064p_vhdl.vhd
+- testbench_s25fl064p_verilog.vhd
+- spansion_tc_pkg.vhd
+- model_release_history.txt
+##########################################
+##########################################
+Publication ID     - SPANSION, S25FL064 032P DRS Rev.19, 2008
+
+VITAL model author -  Dragisa Stanojkovic
+                      d-stanojkovic@hdl-dh.com
+##########################################
+##########################################
+RELEASE 1.2
+
+# Release Label             => vital-amd-REL-s25fl064p-2008-03-05-1.tar.gz
+# Release Date (DD/MM/YYYY) => 05/03/2008
+# Release Version           => 1.2
+
+# Bugs fixed (from previous release)
+- MPM mode for Dual/Quad High Performance changed
+
+# Files modified (from previous release)
+- s25fl064p.ftm
+- s25fl064p.ftmv
+- s25fl064p_vhdl.sdf
+- s25fl064p_verilog.sdf
+- s25fl064p.vhd
+- s25fl064p.v
+- testbench_s25fl064p_vhdl.vhd
+- testbench_s25fl064p_verilog.vhd
+- spansion_tc_pkg.vhd
+- model_release_history.txt
+##########################################
+##########################################
+RELEASE 1.3
+
+# Release Label             => vital-amd-REL-s25fl064p-2008-03-20-1.tar.gz
+# Release Date (DD/MM/YYYY) => 20/03/2008
+# Release Version           => 1.3
+
+# Bugs fixed (from previous release)
+- MPM mode removed
+
+# Files modified (from previous release)
+- s25fl064p.vhd
+- s25fl064p.v
+- testbench_s25fl064p_vhdl.vhd
+- testbench_s25fl064p_verilog.vhd
+- spansion_tc_pkg.vhd
+- model_release_history.txt
+##########################################
+##########################################
+
+VITAL model author -  Jadranka Stoickov
+                      j-stoickov@hdl-dh.com
+##########################################
+##########################################
+RELEASE 1.4
+
+# Release Label             => vital-amd-REL-s25fl064p-2008-08-07-1.tar.gz
+# Release Date (DD/MM/YYYY) => 07/08/2008
+# Release Version           => 1.4
+
+# Bugs fixed (from previous release)
+- WEL bit fixed
+
+# Files modified (from previous release)
+- s25fl064p.v
+- model_release_history.txt
+##########################################
+##########################################
+Publication ID     - SPANSION, S25FL129_064_032P_DRS Rev.23.2, Oct 13, 2008
+
+VITAL model author -  Jadranka Stoickov
+                      j-stoickov@hdl-dh.com
+##########################################
+##########################################
+RELEASE 1.5
+
+# Release Label             => vital-amd-REL-s25fl064p-2008-15-10-1.tar.gz
+# Release Date (DD/MM/YYYY) => 15/12/2008
+# Release Version           => 1.5
+
+# Changes made (from previous release)
+- alignment to new datasheet
+
+# Files modified (from previous release)
+- s25fl064p.ftm
+- s25fl064p.ftmv
+- s25fl064p_vhdl.sdf
+- s25fl064p_verilog.sdf
+- s25fl064p.vhd
+- s25fl064p.v
+- testbench_s25fl064p_vhdl.vhd
+- testbench_s25fl064p_verilog.vhd
+- spansion_tc_pkg.vhd
+- model_release_history.txt
+##########################################
+VITAL model author -  Snezana Petrovic
+                      s-petrovic@hdl-dh.com
+##########################################
+##########################################
+RELEASE 1.6
+
+# Release Label             => vital-amd-REL-s25fl064p-2009-05-29-1.tar.gz
+# Release Date (DD/MM/YYYY) => 29/05/2009
+# Release Version           => 1.6
+
+# Changes made (from previous release)
+- Timing ranges in timing files corrected
+
+# Files modified (from previous release)
+- s25fl064p.ftm
+- s25fl064p.ftmv
+- s25fl064p_vhdl.sdf
+- s25fl064p_verilog.sdf
+##########################################
+##########################################
+VITAL model author -  Vesna Mancev
+                      v-mancev@hdl-dh.com
+##########################################
+##########################################
+RELEASE 1.7
+
+# Release Label             => vital-amd-REL-s25fl064p-2010-09-29-1.tar.gz
+# Release Date (DD/MM/YYYY) => 29/09/2010
+# Release Version           => 1.7
+
+# Changes made (from previous release)
+#       1. During the QUAD mode HOLD# input is not monitored for its normal function
+#       2. Internal pull-up resistors for HOLD# and WP# inputs are implemented
+
+# Files modified (from previous release)
+- s25fl064p.vhd
+- s25fl064p.v
+##########################################
+##########################################
+VITAL model author -  Vesna Mancev
+                      v-mancev@hdl-dh.com
+##########################################
+##########################################
+RELEASE 1.8
+
+# Release Label             => vital-amd-REL-s25fl064p-2012-01-13-1.tar.gz
+# Release Date (DD/MM/YYYY) => 13/01/2012
+# Release Version           => 1.8
+
+# Changes made (from previous release)
+- alignment to new datasheet (S25FL064P_00_05, November 18, 2011)
+
+# Files modified (from previous release)
+- s25fl064p.ftm
+- s25fl064p.ftmv
+- s25fl064p_vhdl.sdf
+- s25fl064p_verilog.sdf
+- s25fl064p.vhd
+- s25fl064p.v
+- testbench_s25fl064p_vhdl.vhd
+- testbench_s25fl064p_verilog.vhd
+- spansion_tc_pkg.vhd
+- spansion_flash_testbench_struct.pdf
+- spansion_flash_test_cases_list.pdf
+- model_release_history.txt
+##########################################

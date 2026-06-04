@@ -1,0 +1,8 @@
+$PULP_ENV/src/ips/crg_legacy/design/dw_cells/hdl/crg_clk_an2.v
+$PULP_ENV/src/ips/crg_legacy/design/dw_cells/hdl/crg_clk_clockgate.v
+$PULP_ENV/src/ips/crg_legacy/design/dw_cells/hdl/crg_clk_inv.v
+$PULP_ENV/src/ips/crg_legacy/design/dw_cells/hdl/crg_clk_mx2.v
+$PULP_ENV/src/ips/crg_legacy/design/dw_cells/hdl/crg_clk_xor2.v
+$PULP_ENV/src/ips/crg_legacy/design/dw_cells/hdl/crg_tieoff.v
+$PULP_ENV/src/ips/crg_legacy/design/dw_cells/hdl/crg_glitch_free_mux.v
+$PULP_ENV/src/ips/crg_legacy/design/dw_cells/hdl/crg_clk_nand2.v

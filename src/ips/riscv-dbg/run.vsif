@@ -1,0 +1,18 @@
+session sansa {
+   top_dir              : $ENV(MY_WS)/simulation/vmanager;
+   output_mode          : log_only;
+   drm                  : sge;
+   max_runs_in_parallel : 100;
+   master_submission_policy : execute_locally;
+};
+
+//NOTE: if you are running this standalone (i.e. no CI), remove anything with the word restore in it here
+group riscv-dbg {
+   run_script: "source $PULP_ENV/src/ips/riscv-dbg/regression.sh | make -f $PULP_ENV/src/tb/run.make SIM_DIR=$MY_WS/simulation JTAG_BITBANG=true APP=endless QRUN=";
+   timeout: 300;
+   test openocd_compliance {
+      count: 1;
+   };
+};
+
+

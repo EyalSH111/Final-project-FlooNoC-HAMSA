@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+
+#############################################
+import socket
+if 'enicsmtsmc01'==socket.gethostname():
+    default_server          = 'https://tsmcgitlab.local'
+else:
+    default_server          = 'git@gitlab.local'
+default_group           = 'soc'
+default_ipstools_commit = 'master'
+##############################################
+
+import sys,os,subprocess
+from argparse import ArgumentParser
+
+def upgrade(commit):
+    cwd = os.getcwd()
+    os.chdir("ipstools")
+    subprocess.call("git fetch".split(), stdout=devnull)
+    subprocess.call(("git checkout %s"%(commit)).split(), stdout=devnull)
+    os.chdir(cwd)
+    return
+
+devnull = open(os.devnull, 'wb')
+
+# download latest IPApproX tools in ./ipstools and import them
+if os.path.exists("ipstools") and os.path.isdir("ipstools"):
+    import ipstools
+else:
+    if 'http' in default_server:
+        sep = '/'
+    else:
+        sep = ':'
+    subprocess.call(("git clone %s%s%s/IPApproX ipstools"%(default_server, sep, default_group)).split(), stdout=None)
+    upgrade(commit=default_ipstools_commit)
+    import ipstools
+tcolors = ipstools.tcolors
+
+
+
+if __name__ == "__main__":
+    if len(sys.argv)>1 and sys.argv[1]=='upgrade':
+        if len(sys.argv)==3:
+            upgrade(sys.argv[2])
+        else:
+            print(tcolors.ERROR + "ERROR: usage: ipt upgrade <commit>" + tcolors.ENDC)
+            sys.exit(1)
+    else:
+        ipstools.ipt.cli()

@@ -1,0 +1,9 @@
+$PULP_ENV/src/ips/crg_legacy/design/rcg_ctrl/hdl/rcg_ctrl_grst_gen.v
+$PULP_ENV/src/ips/crg_legacy/design/rcg_ctrl/hdl/rcg_ctrl_core.v
+$PULP_ENV/src/ips/crg_legacy/design/rcg_ctrl/hdl/rcg_ctrl_div.v
+$PULP_ENV/src/ips/crg_legacy/design/rcg_ctrl/hdl/rcg_ctrl_div_cntr.v
+$PULP_ENV/src/ips/crg_legacy/design/rcg_ctrl/hdl/rcg_ctrl_opcg.v
+$PULP_ENV/src/ips/crg_legacy/design/rcg_ctrl/hdl/rcg_ctrl_rcc.v
+$PULP_ENV/src/ips/crg_legacy/design/rcg_ctrl/hdl/rcg_ctrl_rcc_core.v
+$PULP_ENV/src/ips/crg_legacy/design/rcg_ctrl/hdl/rcg_ctrl_top.v
+$PULP_ENV/src/ips/crg_legacy/design/rcg_ctrl/hdl/rcg_ctrl_pll_bypass.v

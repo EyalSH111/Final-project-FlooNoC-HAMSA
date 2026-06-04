@@ -1,0 +1,13 @@
+$PULP_ENV/src/ips/altera_sim/altera_mf.v
+$PULP_ENV/src/fpga/altera_sram.v
+$PULP_ENV/src/fpga/altera_sram_16384x32.v
+$PULP_ENV/src/fpga/altera_sram_16384x128.v
+$PULP_ENV/src/fpga/altera_sram_8192x32.v
+$PULP_ENV/src/fpga/altera_sram_2048x128.v
+$PULP_ENV/src/fpga/altera_sram_4096x128.v
+$PULP_ENV/src/fpga/altera_sram_10240x128.v
+$PULP_ENV/src/fpga/altera_sram_7680x128.v
+$PULP_ENV/src/fpga/altera_sram_49152x32.v
+$PULP_ENV/src/fpga/altera_sp_ram_1024x256_be.v
+$PULP_ENV/src/fpga/altera_sp_ram_256x256_be.v
+$PULP_ENV/src/fpga/pll.v

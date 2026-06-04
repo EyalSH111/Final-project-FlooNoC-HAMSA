@@ -1,0 +1,2 @@
+$PULP_ENV/src/ips/crg_legacy/design/soc_building_blocks/hdl/sc_fifo.v
+$PULP_ENV/src/ips/crg_legacy/design/soc_building_blocks/hdl/intc.v

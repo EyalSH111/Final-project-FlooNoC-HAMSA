@@ -1,0 +1,5 @@
+Failed to open connection to "session" message bus: Failed to connect to socket /tmp/dbus-Ovrz3gjROk: Connection refused
+Failed to launch bus: Failed to connect to session busGtk-Message: Failed to load module "canberra-gtk-module"
+Gtk-Message: Failed to load module "pk-gtk-module"
+Gtk-Message: Failed to load module "canberra-gtk-module"
+Gtk-Message: Failed to load module "pk-gtk-module"

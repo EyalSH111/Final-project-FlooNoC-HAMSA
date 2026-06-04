@@ -1,0 +1,12 @@
+List of Files
+
+spram_4096x16m16b1pm2re1/spram_4096x16m16b1pm2re1_mdl.v
+  -- Behavioral Verilog Model for the Instance spram_4096x16m16b1pm2re1
+spram_4096x16m16b1pm2re1/spram_4096x16m16b1pm2re1_*.lib
+  -- Liberty Models for the Instance spram_4096x16m16b1pm2re1
+spram_4096x16m16b1pm2re1/spram_4096x16m16b1pm2re1.gds
+  -- GDS View for the Instance spram_4096x16m16b1pm2re1
+spram_4096x16m16b1pm2re1/spram_4096x16m16b1pm2re1.lef
+  -- LEF for the Instance spram_4096x16m16b1pm2re1
+spram_4096x16m16b1pm2re1/spram_4096x16m16b1pm2re1.sp
+  -- Spice Netlist for the Instance spram_4096x16m16b1pm2re1

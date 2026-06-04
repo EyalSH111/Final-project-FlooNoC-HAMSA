@@ -1,0 +1,28 @@
+# archive
+rm -rf rev_1.prev
+if $? != 0 then
+    mv rev_1.prev DELETE_ME
+endif
+mv rev_1 rev_1.prev
+
+# this is a hack for targeting quartus18.1 when not installed
+setenv QUARTUS_ROOTDIR /home/noytzach/bin/quartus/18.1
+
+# run synplify
+qrun /opt/synopsys/fpga/P-2019.09-SP1/bin/synplify_premier -batch synplify.tcl
+if $? != 0 then
+    echo ' >>> Synplify failed.'
+    exit 1
+endif
+
+# pack outputs needed for quartus
+cp rev_1/fpgnix.scf rev_1/fpgnix.sdc
+echo "derive_clock_uncertainty" >> rev_1/fpgnix.sdc
+tar -czf fpgnix.tar.gz rev_1/fpgnix.vqm rev_1/fpgnix.sdc rev_1/fpgnix.tcl rev_1/*.mif rev_1/*.hex
+if $? == 0 then
+    echo ' >>> Created tarball: fpgnix.tar.gz'
+    exit 0
+endif
+
+echo ' >>> Something failed.'
+exit 1

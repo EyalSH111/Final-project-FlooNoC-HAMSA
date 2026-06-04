@@ -1,0 +1,230 @@
+<!DOCTYPE FTML SYSTEM "ftml.dtd">
+<FTML><HEAD><TITLE>FMF Timing for s25fl064p Parts</TITLE>
+<BODY>
+<REVISION.HISTORY>
+version: |   author:      | mod date: | changes made:
+  V1.0      D.Stanojkovic   08 Jan 11  Initial release
+  V1.1      D.Stanojkovic   08 Mar 04  New timmings added and changed
+                                       timming model labeling
+  V1.2      J.Stoickov      08 Dec 10  Changed timming model labeling
+  V1.3      S.Petrovic      09 May 29  Timing ranges corrected
+  V1.4      V.Mancev        12 Jan 10  Latest datasheet update
+</REVISION.HISTORY>
+<TIMESCALE>1ns</TIMESCALE>
+<MODEL>s25fl064p
+<FMFTIME>
+S25FL064P0XMFI000_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFI001_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFI003_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFI000_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFI001_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFI003_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFV000_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFV001_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFV003_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFV000_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFV001_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFV003_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHI020_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHI023_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHI030_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHI033_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHV020_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHV023_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHV030_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHV033_F_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+<COMMENT>The values listed are for VCC=2.7V to 3.6V, CL=30pF,
+Industrial Ta=-40 to +85 Celsius</COMMENT>
+<TIMING>
+  (DELAY (ABSOLUTE
+    (COND ~dual (IOPATH SCK SO (5.4:6.7:8) (5.4:6.7:8) () (5.4:6.7:8) () (5.4:6.7:8)))
+    (COND dual  (IOPATH SCK SO (6.5:8:9.5) (6.5:8:9.5) () (6.5:8:9.5) () (6.5:8:9.5)))
+
+    (COND CSNeg (IOPATH CSNeg SO () () (5.4:6.7:8) () (5.4:6.7:8) ()))
+
+    (COND ~dual  (IOPATH HOLDNeg SO () () (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8)))
+    (COND dual   (IOPATH HOLDNeg SO () () (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8)))
+
+    (COND dual (IOPATH SCK SI (6.5:8:9.5) (6.5:8:9.5) () (6.5:8:9.5) () (6.5:8:9.5)))
+    (COND dual (IOPATH HOLDNeg SI () () (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8)))
+    (COND dual && CSNeg (IOPATH CSNeg SI () () (5.4:6.7:8) () (5.4:6.7:8) ()))
+
+    (COND dual && QUAD (IOPATH SCK HOLDNeg (6.5:8:9.5) (6.5:8:9.5) () (6.5:8:9.5) () (6.5:8:9.5)))
+    (COND dual && CSNeg && QUAD (IOPATH CSNeg HOLDNeg () () (5.4:6.7:8) () (5.4:6.7:8) ()))
+
+    (COND dual && QUAD (IOPATH SCK WPNeg (6.5:8:9.5) (6.5:8:9.5) () (6.5:8:9.5) () (6.5:8:9.5)))
+    (COND dual && CSNeg && QUAD (IOPATH CSNeg WPNeg () () (5.4:6.7:8) () (5.4:6.7:8) ()))
+))
+(TIMINGCHECK
+    (SETUP CSNeg SCK (3))
+    (SETUP HOLDNeg SCK (3))
+    (SETUP SI SCK (3))
+    (SETUP WPNeg CSNeg (20))
+
+    (HOLD CSNeg SCK (3))
+    (HOLD HOLDNeg SCK (3))
+    (HOLD SI SCK (2))
+    (HOLD WPNeg CSNeg (100))
+
+    (WIDTH (COND  fast_rd (negedge SCK)) (4.5))
+    (WIDTH (COND  fast_rd (posedge SCK)) (4.5))
+    (WIDTH (COND  dual_rd (negedge SCK)) (4.5))
+    (WIDTH (COND  dual_rd (posedge SCK)) (4.5))
+    (WIDTH (COND  rd (negedge SCK)) (4.5))
+    (WIDTH (COND  rd (posedge SCK)) (4.5))
+    (WIDTH (COND  rd_jid (negedge SCK)) (4.5))
+    (WIDTH (COND  rd_jid (posedge SCK)) (4.5))
+    (WIDTH (COND  RD_EQU_1 (posedge CSNeg)) (10))
+    (WIDTH (COND  RD_EQU_0 (posedge CSNeg)) (50))
+    (PERIOD (COND fast_rd SCK) (9.6))
+    (PERIOD (COND rd SCK) (25.0))
+    (PERIOD (COND rd_jid SCK) (20.0))
+    (PERIOD (COND dual_rd SCK) (12.5))
+)
+</TIMING></FMFTIME>
+<FMFTIME>
+</BODY></FTML>
+<FMFTIME>
+S25FL064P0XMFI000_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFI001_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFI003_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFI000_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFI001_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFI003_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFV000_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFV001_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFV003_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFV000_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFV001_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFV003_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHI020_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHI023_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHI030_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHI033_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHV020_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHV023_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHV030_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHV033_R_30pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+<COMMENT>The values listed are for regulated Vcc range VCC=3.0V to 3.6V, CL=30pF,
+Industrial Ta=-40 to +85 Celsius</COMMENT>
+<TIMING>
+  (DELAY (ABSOLUTE
+    (COND ~dual (IOPATH SCK SO (4.5:5.5:6.5) (4.5:5.5:6.5) () (4.5:5.5:6.5) () (4.5:5.5:6.5)))
+    (COND dual  (IOPATH SCK SO (5.4:6.7:8) (5.4:6.7:8) () (5.4:6.7:8) () (5.4:6.7:8)))
+
+    (COND CSNeg (IOPATH CSNeg SO () () (5.4:6.7:8) () (5.4:6.7:8) ()))
+
+    (COND ~dual  (IOPATH HOLDNeg SO () () (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8)))
+    (COND dual   (IOPATH HOLDNeg SO () () (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8)))
+
+    (COND dual (IOPATH SCK SI (5.4:6.7:8) (5.4:6.7:8) () (5.4:6.7:8) () (5.4:6.7:8)))
+    (COND dual (IOPATH HOLDNeg SI () () (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8)))
+    (COND dual && CSNeg (IOPATH CSNeg SI () () (5.4:6.7:8) () (5.4:6.7:8) ()))
+
+    (COND dual && QUAD (IOPATH SCK HOLDNeg (5.4:6.7:8) (5.4:6.7:8) () (5.4:6.7:8) () (5.4:6.7:8)))
+    (COND dual && CSNeg && QUAD (IOPATH CSNeg HOLDNeg () () (5.4:6.7:8) () (5.4:6.7:8) ()))
+
+    (COND dual && QUAD (IOPATH SCK WPNeg (5.4:6.7:8) (5.4:6.7:8) () (5.4:6.7:8) () (5.4:6.7:8)))
+    (COND dual && CSNeg && QUAD (IOPATH CSNeg WPNeg () () (5.4:6.7:8) () (5.4:6.7:8) ()))
+))
+(TIMINGCHECK
+    (SETUP CSNeg SCK (3))
+    (SETUP HOLDNeg SCK (3))
+    (SETUP SI SCK (3))
+    (SETUP WPNeg CSNeg (20))
+
+    (HOLD CSNeg SCK (3))
+    (HOLD HOLDNeg SCK (3))
+    (HOLD SI SCK (2))
+    (HOLD WPNeg CSNeg (100))
+
+    (WIDTH (COND  fast_rd (negedge SCK)) (4.5))
+    (WIDTH (COND  fast_rd (posedge SCK)) (4.5))
+    (WIDTH (COND  dual_rd (negedge SCK)) (4.5))
+    (WIDTH (COND  dual_rd (posedge SCK)) (4.5))
+    (WIDTH (COND  rd (negedge SCK)) (4.5))
+    (WIDTH (COND  rd (posedge SCK)) (4.5))
+    (WIDTH (COND  rd_jid (negedge SCK)) (4.5))
+    (WIDTH (COND  rd_jid (posedge SCK)) (4.5))
+    (WIDTH (COND  RD_EQU_1 (posedge CSNeg)) (10))
+    (WIDTH (COND  RD_EQU_0 (posedge CSNeg)) (50))
+    (PERIOD (COND fast_rd SCK) (9.6))
+    (PERIOD (COND rd SCK) (25.0))
+    (PERIOD (COND rd_jid SCK) (20.0))
+    (PERIOD (COND dual_rd SCK) (12.5))
+)
+</TIMING></FMFTIME>
+<FMFTIME>
+</BODY></FTML>
+<FMFTIME>
+S25FL064P0XMFI000_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFI001_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFI003_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFI000_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFI001_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFI003_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFV000_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFV001_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XMFV003_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFV000_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFV001_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XNFV003_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHI020_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHI023_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHI030_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHI033_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHV020_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHV023_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHV030_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+S25FL064P0XBHV033_R_15pF<SOURCE> Spansion, S25FL064P_00_05, November 18, 2011 </SOURCE>
+<COMMENT>The values listed are for regulated Vcc range VCC=3.0V to 3.6V, CL=15pF,
+Industrial Ta=-40 to +85 Celsius</COMMENT>
+<TIMING>
+  (DELAY (ABSOLUTE
+    (COND ~dual (IOPATH SCK SO (4.5:5.5:6.5) (4.5:5.5:6.5) () (4.5:5.5:6.5) () (4.5:5.5:6.5)))
+    (COND dual  (IOPATH SCK SO (4.7:5.8:7) (4.7:5.8:7) () (4.7:5.8:7) () (4.7:5.8:7)))
+
+    (COND CSNeg (IOPATH CSNeg SO () () (5.4:6.7:8) () (5.4:6.7:8) ()))
+
+    (COND ~dual  (IOPATH HOLDNeg SO () () (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8)))
+    (COND dual   (IOPATH HOLDNeg SO () () (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8)))
+
+    (COND dual (IOPATH SCK SI (4.7:5.8:7) (4.7:5.8:7) () (4.7:5.8:7) () (4.7:5.8:7)))
+    (COND dual (IOPATH HOLDNeg SI () () (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8) (5.4:6.7:8)))
+    (COND dual && CSNeg (IOPATH CSNeg SI () () (5.4:6.7:8) () (5.4:6.7:8) ()))
+
+    (COND dual && QUAD (IOPATH SCK HOLDNeg (4.7:5.8:7) (4.7:5.8:7) () (4.7:5.8:7) () (4.7:5.8:7)))
+    (COND dual && CSNeg && QUAD (IOPATH CSNeg HOLDNeg () () (5.4:6.7:8) () (5.4:6.7:8) ()))
+
+    (COND dual && QUAD (IOPATH SCK WPNeg (4.7:5.8:7) (4.7:5.8:7) () (4.7:5.8:7) () (4.7:5.8:7)))
+    (COND dual && CSNeg && QUAD (IOPATH CSNeg WPNeg () () (5.4:6.7:8) () (5.4:6.7:8) ()))
+))
+(TIMINGCHECK
+    (SETUP CSNeg SCK (3))
+    (SETUP HOLDNeg SCK (3))
+    (SETUP SI SCK (3))
+    (SETUP WPNeg CSNeg (20))
+
+    (HOLD CSNeg SCK (3))
+    (HOLD HOLDNeg SCK (3))
+    (HOLD SI SCK (2))
+    (HOLD WPNeg CSNeg (100))
+
+    (WIDTH (COND  fast_rd (negedge SCK)) (4.5))
+    (WIDTH (COND  fast_rd (posedge SCK)) (4.5))
+    (WIDTH (COND  dual_rd (negedge SCK)) (4.5))
+    (WIDTH (COND  dual_rd (posedge SCK)) (4.5))
+    (WIDTH (COND  rd (negedge SCK)) (4.5))
+    (WIDTH (COND  rd (posedge SCK)) (4.5))
+    (WIDTH (COND  rd_jid (negedge SCK)) (4.5))
+    (WIDTH (COND  rd_jid (posedge SCK)) (4.5))
+    (WIDTH (COND  RD_EQU_1 (posedge CSNeg)) (10))
+    (WIDTH (COND  RD_EQU_0 (posedge CSNeg)) (50))
+    (PERIOD (COND fast_rd SCK) (9.6))
+    (PERIOD (COND rd SCK) (25.0))
+    (PERIOD (COND rd_jid SCK) (20.0))
+    (PERIOD (COND dual_rd SCK) (12.5))
+)
+</TIMING></FMFTIME>
+<FMFTIME>
+</BODY></FTML>

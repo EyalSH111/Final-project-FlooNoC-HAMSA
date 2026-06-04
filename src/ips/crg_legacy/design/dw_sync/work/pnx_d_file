@@ -1,0 +1,4 @@
+$PULP_ENV/src/ips/crg_legacy/design/dw_sync/hdl/crg_reset_sync.v
+$PULP_ENV/src/ips/crg_legacy/design/dw_sync/hdl/crg_sync2_arst.v
+$PULP_ENV/src/ips/crg_legacy/design/dw_sync/hdl/crg_sync2.v
+$PULP_ENV/src/ips/crg_legacy/design/dw_sync/hdl/crg_sync2n_arst.v
