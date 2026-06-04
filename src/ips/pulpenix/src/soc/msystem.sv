@@ -476,21 +476,18 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
    `AXI_DEGENERATE_MASTER(axi_xtrn_mst_stub)
    `AXI_DEGENERATE_SLAVE(axi_xtrn_slv_stub)
 
-   genvar axi_floo_i;
-   generate
-     for (axi_floo_i = 0; axi_floo_i < 4; axi_floo_i++) begin : gen_axi_node_slave
-       `AXI_ASSIGN_SLAVE(axi_node_slaves[axi_floo_i], masters[axi_floo_i])
-     end
-     `AXI_ASSIGN_SLAVE(axi_node_slaves[4], axi_xtrn_mst_stub)
-     `AXI_ASSIGN_SLAVE(axi_node_slaves[5], masters[5])
-   endgenerate
+   `AXI_ASSIGN_SLAVE(axi_node_slaves[0], masters[0])
+   `AXI_ASSIGN_SLAVE(axi_node_slaves[1], masters[1])
+   `AXI_ASSIGN_SLAVE(axi_node_slaves[2], masters[2])
+   `AXI_ASSIGN_SLAVE(axi_node_slaves[3], masters[3])
+   `AXI_ASSIGN_SLAVE(axi_node_slaves[4], axi_xtrn_mst_stub)
+   `AXI_ASSIGN_SLAVE(axi_node_slaves[5], masters[5])
 
-   generate
-     for (axi_floo_i = 0; axi_floo_i < 4; axi_floo_i++) begin : gen_axi_node_master
-       `AXI_ASSIGN_MASTER(axi_node_masters[axi_floo_i], slaves[axi_floo_i])
-     end
-     `AXI_ASSIGN_MASTER(axi_node_masters[4], axi_xtrn_slv_stub)
-   endgenerate
+   `AXI_ASSIGN_MASTER(axi_node_masters[0], slaves[0])
+   `AXI_ASSIGN_MASTER(axi_node_masters[1], slaves[1])
+   `AXI_ASSIGN_MASTER(axi_node_masters[2], slaves[2])
+   `AXI_ASSIGN_MASTER(axi_node_masters[3], slaves[3])
+   `AXI_ASSIGN_MASTER(axi_node_masters[4], axi_xtrn_slv_stub)
 `endif
 
    axi_node_intf_wrap #(
@@ -564,13 +561,11 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
      .clk_i           ( clk_sys              ),
      .rst_ni          ( rstn_sys             ),
      .test_enable_i   ( pad_testmode_i       ),
-     .sram_cfg_i      ( '0                   ),
      .axi_in_req_i    ( chimney_mgr_req      ),
      .axi_in_rsp_o    ( chimney_mgr_rsp      ),
      .axi_out_req_o   ( chimney_slv_req      ),
      .axi_out_rsp_i   ( chimney_slv_rsp      ),
      .id_i            ( TileId               ),
-     .route_table_i   ( '0                   ),
      .flit_req_out_o  ( chimney_floo_req_o   ),
      .flit_rsp_out_o  ( chimney_floo_rsp_o   ),
      .flit_req_in_i   ( chimney_floo_req_i   ),
