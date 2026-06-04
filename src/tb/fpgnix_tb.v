@@ -314,14 +314,21 @@ initial begin : floo_periph_clk_bypass
 end
 `endif
 
+integer floo_uart_tx_edges;
+initial floo_uart_tx_edges = 0;
+always @(posedge uart_tx) floo_uart_tx_edges++;
+
 initial begin : floo_boot_diag
     #10_000_000; // 10 ms after time 0
-    $display("[FLOO_BOOT] enable_core=%b ndmreset=%b rstn_sys=%b fetch_int=%b clk_gate=%b (expect 1,0,1,?,1)",
+    $display("[FLOO_BOOT] enable_core=%b ndmreset=%b rstn_sys=%b fetch_int=%b clk_gate=%b boot_addr=0x%08x",
              fpgnix.vqm_msystem_wrap.enable_core,
              fpgnix.vqm_msystem_wrap.ndmreset,
              fpgnix.vqm_msystem_wrap.rstn_sys,
              fpgnix.vqm_msystem_wrap.msystem.fetch_enable_int,
-             fpgnix.vqm_msystem_wrap.msystem.clk_gate_core_int);
+             fpgnix.vqm_msystem_wrap.msystem.clk_gate_core_int,
+             fpgnix.vqm_msystem_wrap.msystem.boot_addr_int);
+    #10_000_000; // 20 ms total
+    $display("[FLOO_UART] uart_tx_edges=%0d by 20ms (0 => core not driving UART)", floo_uart_tx_edges);
 end
 
 initial begin

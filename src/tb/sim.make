@@ -267,9 +267,11 @@ compile: fix-floo-xrun-deps ${LIBRARIES} ${APP_RUN_DIR}/slm_files/app_instr.mif
 endif
 	echo COMPILED
 
+DCACHE_EN ?= true
+
 ${APP_RUN_DIR}/slm_files/l2_stim.slm: ${APP_SRC_DIR}/*
 	mkdir -p ${APP_RUN_DIR}/slm_files
-	$(SSH) $(MAKE) --directory=${APP_SRC_DIR} -f ../${_MAKEFILE} TOOLCHAIN=${TOOLCHAIN} BAUD_RATE=${BAUD_RATE} CLK_PERIOD=${CLK_PERIOD} MARCH=${MARCH} PLATFORM=FPGNIX INCDIR="-I${SW_INCDIR}"
+	$(SSH) $(MAKE) --directory=${APP_SRC_DIR} -f ../${_MAKEFILE} TOOLCHAIN=${TOOLCHAIN} BAUD_RATE=${BAUD_RATE} CLK_PERIOD=${CLK_PERIOD} MARCH=${MARCH} PLATFORM=FPGNIX INCDIR="-I${SW_INCDIR}" DCACHE_EN=${DCACHE_EN}
 	cp ${APP_SRC_DIR}/*.slm ${APP_RUN_DIR}/slm_files
 	mv ${APP_SRC_DIR}/*.slm ${APP_SRC_DIR}/build
 	mv ${APP_SRC_DIR}/spi_stim.txt ${APP_SRC_DIR}/build
