@@ -551,9 +551,9 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
    localparam int unsigned PortEject = 4;
 
    assign router_req_in[PortNorth]  = floo_north_req_i;
-   assign router_rsp_out[PortNorth] = floo_north_rsp_o;
    assign floo_north_req_o          = router_req_out[PortNorth];
-   assign floo_north_rsp_i          = router_rsp_in[PortNorth];
+   assign floo_north_rsp_o          = router_rsp_out[PortNorth];
+   assign router_rsp_in[PortNorth]  = floo_north_rsp_i;
 
    assign router_req_in[PortEast]  = '0;
    assign router_req_in[PortSouth] = '0;
