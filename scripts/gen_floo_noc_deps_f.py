@@ -35,6 +35,8 @@ DEPS_SOURCES = (
     "src/ips/common_cells/src/stream_arbiter_flushable.sv",
     "src/ips/common_cells/src/stream_arbiter.sv",
     "src/ips/common_cells/src/cdc_fifo_gray.sv",
+    # axi_demux_simple (chimney) instantiates delta_counter — solo dir for XRUN
+    "src/ips/floo_noc/xrun_compat/delta_counter/delta_counter.sv",
     # Floo-specific vendored axi only
     "src/ips/floo_noc/xrun_compat/axi_sim/axi_err_slv.sv",
     "src/ips/floo_noc/xrun_compat/axi_sim/axi_demux_simple.sv",

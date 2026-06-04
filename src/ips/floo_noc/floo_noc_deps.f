@@ -19,5 +19,6 @@ $PULP_ENV/src/ips/common_cells/src/stream_register.sv
 $PULP_ENV/src/ips/common_cells/src/stream_arbiter_flushable.sv
 $PULP_ENV/src/ips/common_cells/src/stream_arbiter.sv
 $PULP_ENV/src/ips/common_cells/src/cdc_fifo_gray.sv
+$PULP_ENV/src/ips/floo_noc/xrun_compat/delta_counter/delta_counter.sv
 $PULP_ENV/src/ips/floo_noc/xrun_compat/axi_sim/axi_err_slv.sv
 $PULP_ENV/src/ips/floo_noc/xrun_compat/axi_sim/axi_demux_simple.sv
