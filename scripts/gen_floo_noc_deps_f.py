@@ -1,101 +1,56 @@
 #!/usr/bin/env python3
-"""Regenerate src/ips/floo_noc/floo_noc_deps.f with portable $PULP_ENV paths only."""
+"""Regenerate src/ips/floo_noc/floo_noc_deps.f — minimal RTL for HAMSA stage-1 + XRUN.
+
+Uses HAMSA's existing src/ips/common_cells for fifo_v3, rr_arb_tree, cdc_2phase, etc.
+Only lists vendored files that are unique or required before pulpenix.f.
+"""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / "src" / "ips" / "floo_noc"
 OUT = ROOT / "floo_noc_deps.f"
 
-# TB / verification / XRUN-problematic (see gen_floo_noc_irun_f.py)
-SKIP = frozenset(
-    {
-        "axi_test.sv",
-        "axi_chan_compare.sv",
-        "axi_dumper.sv",
-        "axi_sim_mem.sv",
-        "clk_mux_glitch_free.sv",
-        "popcount.sv",
-        "ring_buffer.sv",
-        "mem_to_banks.sv",
-        "mem_to_banks_detailed.sv",
-        "axi_to_mem.sv",
-        "axi_to_detailed_mem.sv",
-        "axi_to_mem_banked.sv",
-        "axi_to_mem_interleaved.sv",
-        "axi_to_mem_split.sv",
-        "axi_zero_mem.sv",
-        "axi_bus_compare.sv",
-        "axi_slave_compare.sv",
-        "heaviside.sv",
-        "stream_omega_net.sv",
-    }
-)
-
-# Already in HAMSA / riscv-dbg file lists — compiling twice causes duplicate-module errors.
-HAMSA_DUPLICATE_BASENAMES = frozenset(
-    {
-        "cdc_2phase.sv",
-        "fifo_v2.sv",
-        "fifo_v3.sv",
-        "rr_arb_tree.sv",
-        "id_queue.sv",
-    }
-)
-
-SKIP_SUBSTR = (
-    "/test/",
-    "/tests/",
-    "/tb/",
-    "/deprecated/",
-    "hw/test/",
-    "hw/tb/",
-)
-
-# Cadence XRUN: packages must compile before modules that import them.
-PKG_FIRST = (
+# Order matters: packages and leaf cells before parents.
+DEPS_SOURCES = (
+    # --- packages ---
     "deps/common_cells/src/cf_math_pkg.sv",
-    "deps/common_cells/src/ecc_pkg.sv",
-    "deps/common_cells/src/cb_filter_pkg.sv",
-    "deps/common_cells/src/cdc_reset_ctrlr_pkg.sv",
     "deps/axi/src/axi_pkg.sv",
+    "deps/axi/src/axi_intf.sv",
+    # --- common_cells (not duplicated in HAMSA pulpenix/riscv file lists) ---
+    "deps/common_cells/src/sync.sv",
+    "deps/common_cells/src/binary_to_gray.sv",
+    "deps/common_cells/src/gray_to_binary.sv",
+    "deps/common_cells/src/addr_decode.sv",
+    "deps/common_cells/src/lzc.sv",
+    "deps/common_cells/src/spill_register_flushable.sv",
+    "deps/common_cells/src/spill_register.sv",
+    "deps/common_cells/src/stream_fifo.sv",
+    "deps/common_cells/src/stream_fifo_optimal_wrap.sv",
+    "deps/common_cells/src/stream_register.sv",
+    "deps/common_cells/src/stream_arbiter_flushable.sv",
+    "deps/common_cells/src/stream_arbiter.sv",
+    "deps/common_cells/src/cdc_fifo_gray.sv",
+    # --- axi (Floo chimney + rob_wrapper only) ---
+    "deps/axi/src/axi_err_slv.sv",
+    "deps/axi/src/axi_demux_simple.sv",
 )
-
-
-def should_skip(sv: Path) -> bool:
-    rel = sv.relative_to(ROOT).as_posix()
-    if sv.name in SKIP or sv.name in HAMSA_DUPLICATE_BASENAMES:
-        return True
-    if sv.name.endswith("_tb.sv"):
-        return True
-    return any(part in rel for part in SKIP_SUBSTR)
-
-
-def compile_order_key(sv: Path) -> tuple:
-    rel = sv.relative_to(ROOT).as_posix()
-    if rel in PKG_FIRST:
-        return (0, PKG_FIRST.index(rel))
-    if sv.name.endswith("_pkg.sv"):
-        return (1, rel)
-    if sv.name == "axi_intf.sv":
-        return (2, rel)
-    return (3, rel)
 
 
 def main() -> None:
-    files = [sv for sv in (ROOT / "deps").rglob("*.sv") if not should_skip(sv)]
-    files.sort(key=compile_order_key)
-
     lines = [
-        "// floo_noc_deps.f - vendored axi + common_cells ($PULP_ENV paths only)\n",
+        "// floo_noc_deps.f - minimal vendored deps for HAMSA + Cadence XRUN\n",
         "// Regenerate: python3 scripts/gen_floo_noc_deps_f.py\n",
+        "// fifo_v3, rr_arb_tree, cdc_2phase, id_queue: from HAMSA + floo_noc.f xrun_compat\n",
         "+incdir+$PULP_ENV/src/ips/floo_noc/deps/axi/include\n",
         "+incdir+$PULP_ENV/src/ips/floo_noc/deps/common_cells/include\n",
         "+incdir+$PULP_ENV/src/ips/floo_noc/deps/common_cells\n",
     ]
-    for sv in files:
-        rel = sv.relative_to(ROOT).as_posix()
+    for rel in DEPS_SOURCES:
+        path = ROOT / rel
+        if not path.is_file():
+            raise SystemExit(f"MISSING: {path}")
         lines.append(f"$PULP_ENV/src/ips/floo_noc/{rel}\n")
     OUT.write_text("".join(lines), encoding="utf-8")
-    print(f"wrote {OUT} ({len(lines)} lines, {len(files)} sources)")
+    print(f"wrote {OUT} ({len(DEPS_SOURCES)} sources)")
 
 
 if __name__ == "__main__":
