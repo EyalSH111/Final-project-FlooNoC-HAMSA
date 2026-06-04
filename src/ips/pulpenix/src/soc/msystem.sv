@@ -578,6 +578,8 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
      .NumRoutes    ( NumRoutes    ),
      .NumInputs    ( NumRoutes    ),
      .NumOutputs   ( NumRoutes    ),
+     .InFifoDepth  ( 2            ),
+     .OutFifoDepth ( 2            ),
      .id_t         ( id_t         ),
      .hdr_t        ( hdr_t        ),
      .floo_req_t   ( floo_req_t   ),
