@@ -95,9 +95,9 @@ module spill_register_flushable #(
     // We empty the spill register before the slice register.
     assign data_o = b_full_q ? b_data_q : a_data_q;
 
+    // HAMSA assertions.svh: ASSERT has 4 args only (no message string) — XRUN TMWFMA otherwise
     `ifndef COMMON_CELLS_ASSERTS_OFF
-    `ASSERT(flush_valid, flush_i |-> ~valid_i, clk_i, !rst_ni,
-           "Trying to flush and feed the spill register simultaneously. You will lose data!")
-   `endif
+    `ASSERT(flush_valid, flush_i |-> ~valid_i, clk_i, !rst_ni)
+    `endif
   end
 endmodule
