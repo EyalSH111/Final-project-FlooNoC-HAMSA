@@ -271,13 +271,15 @@ SimJTAG #(
 // Stage-1 FlooNoC: North-port loopback + chimney activity monitor
 // ---------------------------------------------------------------------------
 wire floo_tb_clk;
+wire floo_rstn;
 assign floo_tb_clk = fpgnix.vqm_msystem_wrap.msystem.clk_sys;
+assign floo_rstn   = fpgnix.vqm_msystem_wrap.rstn_sys;
 
 reg [FlooReqBits-1:0] floo_req_i_lb;
 reg [FlooRspBits-1:0] floo_rsp_i_lb;
 
-always @(posedge floo_tb_clk or negedge rst_n) begin
-    if (!rst_n) begin
+always @(posedge floo_tb_clk or negedge floo_rstn) begin
+    if (!floo_rstn) begin
         floo_req_i_lb <= '0;
         floo_rsp_i_lb <= '0;
     end else begin
@@ -289,71 +291,113 @@ end
 assign fpgnix.floo_req_i = floo_req_i_lb;
 assign fpgnix.floo_rsp_i = floo_rsp_i_lb;
 
-// Stage-1: axi_node port 4 is stubbed; drive one AXI write on masters[4] into the chimney.
-initial begin : floo_axi_stim
-    integer timeout;
-    wait (rst_n === 1'b1);
-    repeat (500) @(posedge floo_tb_clk);
-    $display("[FLOO_STIM] driving AXI write on masters[4]");
+// Stage-1: drive one AXI write on masters[4] (sync to clk_sys / rstn_sys).
+typedef enum logic [2:0] {
+    FLOO_ST_IDLE = 3'd0,
+    FLOO_ST_AW   = 3'd1,
+    FLOO_ST_W    = 3'd2,
+    FLOO_ST_B    = 3'd3,
+    FLOO_ST_DONE = 3'd4
+} floo_stim_e;
 
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid  <= 1'b0;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_valid  <= 1'b0;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_valid   <= 1'b0;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready   <= 1'b0;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].r_ready   <= 1'b0;
+floo_stim_e        floo_stim_state;
+integer            floo_stim_cycles;
+integer            floo_stim_start_delay;
+integer            floo_stim_max_cycles;
 
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid  <= 1'b1;
-    // XY decode uses addr[16]=x, addr[20]=y; tile is (0,0) — use local address so flits eject to chimney
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_addr   <= 32'h0000_0000;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_id     <= 2'b0;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_len    <= 8'h0;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_size  <= 3'b010;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_burst <= 2'b01;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_lock   <= 1'b0;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_cache  <= 4'b0;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_prot   <= 3'b0;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_qos    <= 4'b0;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_region <= 4'b0;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_user   <= 1'b0;
+initial begin
+    floo_stim_start_delay = 500;
+    floo_stim_max_cycles  = 50000;
+    void'($value$plusargs("FLOO_STIM_DELAY=%d", floo_stim_start_delay));
+    void'($value$plusargs("FLOO_STIM_MAX_CYCLES=%d", floo_stim_max_cycles));
+end
 
-    timeout = 0;
-    do begin
-        @(posedge floo_tb_clk);
-        timeout = timeout + 1;
-    end while (!fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_ready && timeout < 50000);
-    if (timeout >= 50000)
-        $display("[FLOO_STIM] TIMEOUT waiting for aw_ready");
-    else begin
-        $display("[FLOO_STIM] aw_ready @ time %0t", $time);
-        fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid <= 1'b0;
+always_ff @(posedge floo_tb_clk or negedge floo_rstn) begin : floo_axi_stim
+    if (!floo_rstn) begin
+        floo_stim_state  <= FLOO_ST_IDLE;
+        floo_stim_cycles <= 0;
+        fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid  <= 1'b0;
+        fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_valid  <= 1'b0;
+        fpgnix.vqm_msystem_wrap.msystem.masters[4].w_valid   <= 1'b0;
+        fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready   <= 1'b0;
+        fpgnix.vqm_msystem_wrap.msystem.masters[4].r_ready   <= 1'b0;
+    end else begin
+        case (floo_stim_state)
+            FLOO_ST_IDLE: begin
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid <= 1'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].w_valid  <= 1'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready  <= 1'b0;
+                if (floo_stim_cycles == floo_stim_start_delay) begin
+                    $display("[FLOO_STIM] driving AXI write on masters[4] (rstn_sys=1)");
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_addr   <= 32'h0000_0000;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_id     <= 2'b0;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_len    <= 8'h0;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_size   <= 3'b010;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_burst <= 2'b01;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_lock  <= 1'b0;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_cache <= 4'b0;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_prot  <= 3'b0;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_qos   <= 4'b0;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_region<= 4'b0;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_user  <= 1'b0;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid <= 1'b1;
+                    floo_stim_state  <= FLOO_ST_AW;
+                    floo_stim_cycles <= 0;
+                end else
+                    floo_stim_cycles <= floo_stim_cycles + 1;
+            end
 
-        fpgnix.vqm_msystem_wrap.msystem.masters[4].w_valid  <= 1'b1;
-        fpgnix.vqm_msystem_wrap.msystem.masters[4].w_data  <= 32'hF100_F100;
-        fpgnix.vqm_msystem_wrap.msystem.masters[4].w_strb   <= 4'hF;
-        fpgnix.vqm_msystem_wrap.msystem.masters[4].w_last   <= 1'b1;
-        fpgnix.vqm_msystem_wrap.msystem.masters[4].w_user   <= 1'b0;
-        timeout = 0;
-        do begin
-            @(posedge floo_tb_clk);
-            timeout = timeout + 1;
-        end while (!fpgnix.vqm_msystem_wrap.msystem.masters[4].w_ready && timeout < 50000);
-        if (timeout >= 50000)
-            $display("[FLOO_STIM] TIMEOUT waiting for w_ready");
-        else begin
-            $display("[FLOO_STIM] w_ready @ time %0t", $time);
-            fpgnix.vqm_msystem_wrap.msystem.masters[4].w_valid <= 1'b0;
-            fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready <= 1'b1;
-            timeout = 0;
-            do begin
-                @(posedge floo_tb_clk);
-                timeout = timeout + 1;
-            end while (!fpgnix.vqm_msystem_wrap.msystem.masters[4].b_valid && timeout < 500000);
-            if (timeout >= 500000)
-                $display("[FLOO_STIM] TIMEOUT waiting for b_valid");
-            else
-                $display("[FLOO_STIM] write response @ time %0t", $time);
-            fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready <= 1'b0;
-        end
+            FLOO_ST_AW: begin
+                if (fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_ready) begin
+                    $display("[FLOO_STIM] aw_ready @ time %0t", $time);
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid <= 1'b0;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_valid  <= 1'b1;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_data   <= 32'hF100_F100;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_strb    <= 4'hF;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_last   <= 1'b1;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_user    <= 1'b0;
+                    floo_stim_state  <= FLOO_ST_W;
+                    floo_stim_cycles <= 0;
+                end else if (floo_stim_cycles >= floo_stim_max_cycles) begin
+                    $display("[FLOO_STIM] TIMEOUT waiting for aw_ready (rstn_sys=%b ndmreset=%b)",
+                             floo_rstn, fpgnix.vqm_msystem_wrap.ndmreset);
+                    $display("[FLOO_STIM] dbg mgr aw_valid=%b aw_ready=%b chimney_rst=%b",
+                             fpgnix.vqm_msystem_wrap.msystem.chimney_mgr_req.aw_valid,
+                             fpgnix.vqm_msystem_wrap.msystem.chimney_mgr_rsp.aw_ready,
+                             fpgnix.vqm_msystem_wrap.msystem.u_hamsa_chimney.rst_ni);
+                    floo_stim_state <= FLOO_ST_DONE;
+                end else
+                    floo_stim_cycles <= floo_stim_cycles + 1;
+            end
+
+            FLOO_ST_W: begin
+                if (fpgnix.vqm_msystem_wrap.msystem.masters[4].w_ready) begin
+                    $display("[FLOO_STIM] w_ready @ time %0t", $time);
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_valid <= 1'b0;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready <= 1'b1;
+                    floo_stim_state  <= FLOO_ST_B;
+                    floo_stim_cycles <= 0;
+                end else if (floo_stim_cycles >= floo_stim_max_cycles) begin
+                    $display("[FLOO_STIM] TIMEOUT waiting for w_ready");
+                    floo_stim_state <= FLOO_ST_DONE;
+                end else
+                    floo_stim_cycles <= floo_stim_cycles + 1;
+            end
+
+            FLOO_ST_B: begin
+                if (fpgnix.vqm_msystem_wrap.msystem.masters[4].b_valid) begin
+                    $display("[FLOO_STIM] write response @ time %0t", $time);
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready <= 1'b0;
+                    floo_stim_state <= FLOO_ST_DONE;
+                end else if (floo_stim_cycles >= floo_stim_max_cycles) begin
+                    $display("[FLOO_STIM] TIMEOUT waiting for b_valid");
+                    floo_stim_state <= FLOO_ST_DONE;
+                end else
+                    floo_stim_cycles <= floo_stim_cycles + 1;
+            end
+
+            default: ; // FLOO_ST_DONE — hold
+        endcase
     end
 end
 
@@ -378,11 +422,24 @@ task floo_mon_report;
 endtask
 
 always @(posedge floo_tb_clk) begin
-    if (fpgnix.vqm_msystem_wrap.msystem.u_hamsa_chimney.flit_req_out_o.valid) begin
+    if (floo_rstn &&
+        (fpgnix.vqm_msystem_wrap.msystem.u_hamsa_chimney.flit_req_out_o.valid ||
+         fpgnix.vqm_msystem_wrap.msystem.u_hamsa_chimney.u_chimney.floo_req_o.valid)) begin
         floo_flit_count <= floo_flit_count + 1;
-        $display("[FLOO_MON] time=%0t chimney floo_req_o.valid flit_count=%0d",
+        $display("[FLOO_MON] time=%0t chimney req valid flit_count=%0d",
                  $time, floo_flit_count + 1);
     end
+end
+
+// Hard stop so xrun does not hang (override: +FLOO_SIM_TIMEOUT_NS=<ns>)
+initial begin : floo_sim_timeout
+    integer tout_ns;
+    tout_ns = TIMEOUT;
+    void'($value$plusargs("FLOO_SIM_TIMEOUT_NS=%d", tout_ns));
+    #(tout_ns);
+    $display("[FLOO_TB] simulation timeout %0d ns — $finish", tout_ns);
+    floo_mon_report();
+    $finish(2);
 end
 
 // XRUN often skips `final` when the testbench calls $finish; schedule an explicit report too.

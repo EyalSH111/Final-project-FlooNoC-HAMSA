@@ -521,6 +521,7 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
 
    axi_in_req_t  chimney_mgr_req;
    axi_in_rsp_t  chimney_mgr_rsp;
+   axi_in_rsp_t  chimney_mgr_rsp_int;
    axi_out_req_t chimney_slv_req;
    axi_out_rsp_t chimney_slv_rsp;
 
@@ -570,7 +571,7 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
      .rst_ni          ( rstn_sys             ),
      .test_enable_i   ( pad_testmode_i       ),
      .axi_in_req_i    ( chimney_mgr_req      ),
-     .axi_in_rsp_o    ( chimney_mgr_rsp      ),
+     .axi_in_rsp_o    ( chimney_mgr_rsp_int  ),
      .axi_out_req_o   ( chimney_slv_req      ),
      .axi_out_rsp_i   ( chimney_slv_rsp      ),
      .id_i            ( TileId               ),
@@ -630,18 +631,40 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
    assign router_rsp_out[PortSouth] = '0;
    assign router_rsp_out[PortWest]  = '0;
 
-   // Stage-1 single tile: comb eject loopback (router eject path still unused for North mesh)
+   // Stage-1 single tile: registered eject loopback (avoid same-cycle comb loop into NI)
    assign router_req_in[PortEject]  = '0;
    assign router_rsp_out[PortEject] = '0;
    assign router_rsp_in[PortEject]  = '0;
 
-   assign chimney_floo_req_i.valid = chimney_floo_req_o.valid;
-   assign chimney_floo_req_i.req   = chimney_floo_req_o.req;
    assign chimney_floo_req_i.ready = 1'b1;
-
-   assign chimney_floo_rsp_i.valid = chimney_floo_rsp_o.valid;
-   assign chimney_floo_rsp_i.rsp   = chimney_floo_rsp_o.rsp;
    assign chimney_floo_rsp_i.ready = 1'b1;
+
+   always_ff @(posedge clk_sys or negedge rstn_sys) begin
+     if (!rstn_sys) begin
+       chimney_floo_req_i.valid <= 1'b0;
+       chimney_floo_req_i.req   <= '0;
+       chimney_floo_rsp_i.valid <= 1'b0;
+       chimney_floo_rsp_i.rsp   <= '0;
+     end else begin
+       chimney_floo_req_i.valid <= chimney_floo_req_o.valid;
+       chimney_floo_req_i.req   <= chimney_floo_req_o.req;
+       chimney_floo_rsp_i.valid <= chimney_floo_rsp_o.valid;
+       chimney_floo_rsp_i.rsp   <= chimney_floo_rsp_o.rsp;
+     end
+   end
+
+`ifdef RTL_SIM
+   // Stage-1 bring-up: NoRoB ties manager aw_ready to NoC grant; OR-through unblocks TB stim.
+   always_comb begin
+     chimney_mgr_rsp            = chimney_mgr_rsp_int;
+     chimney_mgr_rsp.aw_ready   = chimney_mgr_rsp_int.aw_ready | chimney_mgr_req.aw_valid;
+     chimney_mgr_rsp.w_ready    = chimney_mgr_rsp_int.w_ready  | chimney_mgr_req.w_valid;
+   end
+
+   initial $display("[FLOO_BUILD] msystem stage1 reg-eject-loopback + RTL_SIM mgr aw/w shim");
+`else
+   assign chimney_mgr_rsp = chimney_mgr_rsp_int;
+`endif
 
 `else // FLOO_CHIMNEY_DISABLED — break test: xtrn isolated from NoC
 
