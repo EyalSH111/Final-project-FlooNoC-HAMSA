@@ -50,7 +50,7 @@ if grep -q 'TIMEOUT waiting for b_valid' "$LOG"; then
   echo "WARN: b_valid timeout (unexpected after ffa374a RTL_SIM shims)."
 fi
 
-if grep -q 'Hey we use floonoc' "$LOG" || grep -q '--- FINISH ---' "$LOG"; then
+if grep -q 'Hey we use floonoc' "$LOG" || grep -qF '--- FINISH ---' "$LOG"; then
   echo "PASS: UART / finish seen in log."
 else
   echo "WARN: no Hey/FINISH — paste FLOO_BUILD + FLOO_BOOT from $LOG"

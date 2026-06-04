@@ -440,7 +440,7 @@ task floo_mon_report;
             floo_mon_reported = 1'b1;
             $display("[FLOO_MON] SUMMARY: cumulative flits=%0d", floo_flit_count);
             if (floo_flit_count == 0)
-                $display("[FLOO_MON] FAIL: zero flits on fpgnix.floo_req_o (north port)");
+                $display("[FLOO_MON] FAIL: zero flits on msystem.chimney_floo_req_o");
             else begin
                 $display("[FLOO_MON] PASS: non-zero flit activity through FlooNoC chimney");
                 $display("[FLOO_TB] UART check: grep -E \"Hey|FINISH\" helloworld/xrun.log after sim ends");
@@ -449,13 +449,14 @@ task floo_mon_report;
     end
 endtask
 
-floo_req_t floo_north_req_mon;
-assign floo_north_req_mon = fpgnix.floo_req_o;
+// Stage-1 loops chimney flits internally; north port (fpgnix.floo_req_o) may stay quiet.
+floo_req_t floo_chimney_req_mon;
+assign floo_chimney_req_mon = fpgnix.vqm_msystem_wrap.msystem.chimney_floo_req_o;
 
 always @(posedge floo_tb_clk) begin
-    if (floo_rstn && floo_north_req_mon.valid) begin
+    if (floo_rstn && floo_chimney_req_mon.valid) begin
         floo_flit_count <= floo_flit_count + 1;
-        $display("[FLOO_MON] time=%0t north floo_req_o.valid flit_count=%0d",
+        $display("[FLOO_MON] time=%0t chimney_floo_req_o.valid flit_count=%0d",
                  $time, floo_flit_count + 1);
     end
 end
