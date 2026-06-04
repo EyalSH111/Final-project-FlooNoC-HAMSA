@@ -227,12 +227,10 @@ backup:
 
 .PHONY: run
 run: compile
-ifeq ($(REBUILD), true)
-	$(MAKE) -f ${PULP_ENV}/src/tb/sim.make APP=${APP} clean-xrun
-endif
+	@if [ "$(REBUILD)" = "true" ]; then $(MAKE) -f ${PULP_ENV}/src/tb/sim.make APP=${APP} clean-xrun; fi
 	mkdir -p ${APP_RUN_DIR}
 	\rm -f ${APP_RUN_DIR}/app_src_dir
-	ln -s ${APP_SRC_DIR} ${APP_RUN_DIR}/app_src_dir    
+	ln -s ${APP_SRC_DIR} ${APP_RUN_DIR}/app_src_dir
 	cd ${APP_RUN_DIR} && ${IRUN} ${_IRUN_EXTRA} ${_XRUN_FLAGS} ${IRUN_F_FILES}
 
 .PHONY: run_only
