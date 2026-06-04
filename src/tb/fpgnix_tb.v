@@ -433,12 +433,16 @@ always @(posedge floo_tb_clk) begin
     end
 end
 
-// Safety stop so xrun does not hang forever (override: +FLOO_SIM_TIMEOUT_NS=<ns>)
-// Default 60s: FLOO_MON runs ~500ms; core boot + UART need more time than 1–5s.
+// Safety stop so xrun does not hang forever.
+// Prefer +FLOO_SIM_TIMEOUT_S=<sec> (e.g. 60). +FLOO_SIM_TIMEOUT_NS=<ns> must fit in 32-bit int (max ~2147 ms).
 initial begin : floo_sim_timeout
-    integer tout_ns;
+    longint tout_ns;
+    int     tout_s;
     tout_ns = 60_000_000_000;
-    void'($value$plusargs("FLOO_SIM_TIMEOUT_NS=%d", tout_ns));
+    if ($value$plusargs("FLOO_SIM_TIMEOUT_S=%d", tout_s))
+        tout_ns = tout_s * 1_000_000_000;
+    else if ($value$plusargs("FLOO_SIM_TIMEOUT_NS=%d", tout_s))
+        tout_ns = tout_s;
     #(tout_ns);
     floo_mon_report();
     $display("[FLOO_TB] safety timeout %0d ns — $finish (grep FINISH / Hey in xrun.log)", tout_ns);
@@ -447,9 +451,13 @@ end
 
 // XRUN often skips `final` when the testbench calls $finish; schedule an explicit report too.
 initial begin : floo_mon_watchdog
-    integer delay_ns;
+    longint delay_ns;
     delay_ns = 500_000_000; // 500 ms — allow TB AXI stim + core UART (override: +FLOO_MON_DELAY=<ns>)
-    void'($value$plusargs("FLOO_MON_DELAY=%d", delay_ns));
+    begin
+        int delay_ns_i;
+        if ($value$plusargs("FLOO_MON_DELAY=%d", delay_ns_i))
+            delay_ns = delay_ns_i;
+    end
     #(delay_ns);
     floo_mon_report();
 end
