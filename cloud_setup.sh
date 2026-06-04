@@ -1,7 +1,8 @@
 export DDP23_USER_WS=/data/project/tsmc65/users/$USER/ws
 # GitHub FlooNoC integration tree (not legacy ddp23/ddp23_pnx)
-export PULP_ENV=$DDP23_USER_WS/ddp23_pnx
-export FLOO_NOC_ROOT=$DDP23_USER_WS/FlooNoC
+export PULP_ENV=$DDP23_USER_WS/ddp23_pnx_PoC
+# Stage-1 PoC is self-contained; FLOO_NOC_ROOT not required for sim.make
+# export FLOO_NOC_ROOT=$DDP23_USER_WS/FlooNoC
 export XBOX_SRC=$PULP_ENV/src/ips/xbox
 export MY_DDP23_APPS=$PULP_ENV/src/ips/pulpenix_sw/apps
 export PULP_GCC_BIN=/data/project/tsmc65/shared/ddp_hackathon/toolchain/pulp-gcc-centos7-20200913/bin
