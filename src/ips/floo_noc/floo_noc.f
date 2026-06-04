@@ -2,9 +2,9 @@
 // Compile before pulpenix.f / msystem.sv
 
 +incdir+$PULP_ENV/src/ips/floo_noc/hw/include
++incdir+$PULP_ENV/src/ips/common_cells/include
 +incdir+$PULP_ENV/src/ips/floo_noc/deps/axi/include
-+incdir+$PULP_ENV/src/ips/floo_noc/deps/common_cells/include
-// Do NOT add +incdir+.../deps/common_cells (src/): XRUN auto-compiles all .sv → DUPUNI vs HAMSA common_cells
+// Never +incdir floo_noc/deps/common_cells (src): XRUN compiles every .sv in that tree → DUPUNI
 
 -f $PULP_ENV/src/ips/floo_noc/floo_noc_deps.f
 

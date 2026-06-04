@@ -1,54 +1,56 @@
 #!/usr/bin/env python3
-"""Regenerate src/ips/floo_noc/floo_noc_deps.f — minimal RTL for HAMSA stage-1 + XRUN.
+"""Regenerate src/ips/floo_noc/floo_noc_deps.f for HAMSA + Cadence XRUN.
 
-Uses HAMSA's existing src/ips/common_cells for fifo_v3, rr_arb_tree, cdc_2phase, etc.
-Only lists vendored files that are unique or required before pulpenix.f.
+Use ONE common_cells tree ($PULP_ENV/src/ips/common_cells). Do not list any .sv under
+floo_noc/deps/common_cells/src: XRUN 23.x compiles all .sv in the same directory as
+any listed file, which duplicates modules already built from HAMSA (riscv-dbg, etc.).
 """
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1] / "src" / "ips" / "floo_noc"
-OUT = ROOT / "floo_noc_deps.f"
+ROOT = Path(__file__).resolve().parents[1]
+FLOO = ROOT / "src" / "ips" / "floo_noc"
+HAMSA_CC = ROOT / "src" / "ips" / "common_cells"
+OUT = FLOO / "floo_noc_deps.f"
 
-# Order matters: packages and leaf cells before parents.
+# Paths written into .f (must exist under repo).
 DEPS_SOURCES = (
-    # --- packages ---
-    "deps/common_cells/src/cf_math_pkg.sv",
-    "deps/axi/src/axi_pkg.sv",
-    "deps/axi/src/axi_intf.sv",
-    # --- common_cells (not duplicated in HAMSA pulpenix/riscv file lists) ---
-    "deps/common_cells/src/sync.sv",
-    "deps/common_cells/src/binary_to_gray.sv",
-    "deps/common_cells/src/gray_to_binary.sv",
-    "deps/common_cells/src/addr_decode.sv",
-    "deps/common_cells/src/lzc.sv",
-    "deps/common_cells/src/spill_register_flushable.sv",
-    "deps/common_cells/src/spill_register.sv",
-    "deps/common_cells/src/stream_fifo.sv",
-    "deps/common_cells/src/stream_fifo_optimal_wrap.sv",
-    "deps/common_cells/src/stream_register.sv",
-    "deps/common_cells/src/stream_arbiter_flushable.sv",
-    "deps/common_cells/src/stream_arbiter.sv",
-    "deps/common_cells/src/cdc_fifo_gray.sv",
-    # --- axi (Floo chimney + rob_wrapper only) ---
-    "deps/axi/src/axi_err_slv.sv",
-    "deps/axi/src/axi_demux_simple.sv",
+    # packages first
+    "src/ips/common_cells/src/cf_math_pkg.sv",
+    "src/ips/floo_noc/deps/axi/src/axi_pkg.sv",
+    "src/ips/floo_noc/deps/axi/src/axi_intf.sv",
+    # HAMSA common_cells (shared with riscv-dbg / pulpenix — compile once)
+    "src/ips/common_cells/src/sync.sv",
+    "src/ips/common_cells/src/binary_to_gray.sv",
+    "src/ips/common_cells/src/gray_to_binary.sv",
+    "src/ips/common_cells/src/addr_decode.sv",
+    "src/ips/common_cells/src/lzc.sv",
+    "src/ips/common_cells/src/spill_register_flushable.sv",
+    "src/ips/common_cells/src/spill_register.sv",
+    "src/ips/common_cells/src/stream_fifo.sv",
+    "src/ips/common_cells/src/stream_fifo_optimal_wrap.sv",
+    "src/ips/common_cells/src/stream_register.sv",
+    "src/ips/common_cells/src/stream_arbiter_flushable.sv",
+    "src/ips/common_cells/src/stream_arbiter.sv",
+    "src/ips/common_cells/src/cdc_fifo_gray.sv",
+    # Floo-specific vendored axi only
+    "src/ips/floo_noc/deps/axi/src/axi_err_slv.sv",
+    "src/ips/floo_noc/deps/axi/src/axi_demux_simple.sv",
 )
 
 
 def main() -> None:
     lines = [
-        "// floo_noc_deps.f - minimal vendored deps for HAMSA + Cadence XRUN\n",
+        "// floo_noc_deps.f — FlooNoC deps for HAMSA sim (auto-generated)\n",
         "// Regenerate: python3 scripts/gen_floo_noc_deps_f.py\n",
-        "// fifo_v3, rr_arb_tree, cdc_2phase, id_queue: from HAMSA + floo_noc.f xrun_compat\n",
+        "// common_cells: ONLY $PULP_ENV/src/ips/common_cells (never floo_noc/deps/common_cells/src/*.sv)\n",
+        "+incdir+$PULP_ENV/src/ips/common_cells/include\n",
         "+incdir+$PULP_ENV/src/ips/floo_noc/deps/axi/include\n",
-        "+incdir+$PULP_ENV/src/ips/floo_noc/deps/common_cells/include\n",
-        "// (no +incdir on deps/common_cells/src — XRUN would compile every .sv twice)\n",
     ]
     for rel in DEPS_SOURCES:
         path = ROOT / rel
         if not path.is_file():
             raise SystemExit(f"MISSING: {path}")
-        lines.append(f"$PULP_ENV/src/ips/floo_noc/{rel}\n")
+        lines.append(f"$PULP_ENV/{rel.replace(chr(92), '/')}\n")
     OUT.write_text("".join(lines), encoding="utf-8")
     print(f"wrote {OUT} ({len(DEPS_SOURCES)} sources)")
 
