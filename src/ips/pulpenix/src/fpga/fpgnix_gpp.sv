@@ -186,7 +186,11 @@ assign gpp_fpgnix_ctl_reg_valid_pulse = host_regs_valid_pulse[0] ;
 // Handle FPGNIX control reg
 always @(posedge clk or negedge sys_rst_n)
     if (!sys_rst_n) begin
+`ifdef RTL_SIM
+        jtag_sel <= 1'b0; // sim: UART on pads (jtag_sel=1 + TB TRSTn=0 holds debug)
+`else
         jtag_sel <= 1'b1; // 0 - uart ; 1 - jtag
+`endif
         sw_reset_trig_pulse <= 2'b0;
         enable_core <= 1'b1;
     end else if (gpp_fpgnix_ctl_reg_valid_pulse) begin

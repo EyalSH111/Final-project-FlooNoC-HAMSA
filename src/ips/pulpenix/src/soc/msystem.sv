@@ -552,6 +552,53 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
    assign slaves[4].ar_ready = 1'b1;
    assign slaves[4].w_ready  = 1'b1;
 
+`ifdef RTL_SIM
+   // Stage-1: auto-complete xtrn target (no external memory model yet).
+   logic xtrn_slv_aw_seen;
+   logic xtrn_slv_b_pending;
+   logic xtrn_slv_ar_seen;
+   logic xtrn_slv_r_pending;
+
+   always_ff @(posedge clk_sys or negedge rstn_sys) begin
+     if (!rstn_sys) begin
+       xtrn_slv_aw_seen   <= 1'b0;
+       xtrn_slv_b_pending <= 1'b0;
+       xtrn_slv_ar_seen   <= 1'b0;
+       xtrn_slv_r_pending <= 1'b0;
+     end else begin
+       if (slaves[4].aw_valid && slaves[4].aw_ready)
+         xtrn_slv_aw_seen <= 1'b1;
+       if (slaves[4].w_valid && slaves[4].w_ready && slaves[4].w_last && xtrn_slv_aw_seen) begin
+         xtrn_slv_aw_seen   <= 1'b0;
+         xtrn_slv_b_pending <= 1'b1;
+       end
+       if (slaves[4].b_valid && slaves[4].b_ready)
+         xtrn_slv_b_pending <= 1'b0;
+
+       if (slaves[4].ar_valid && slaves[4].ar_ready) begin
+         xtrn_slv_ar_seen   <= 1'b1;
+         xtrn_slv_r_pending <= 1'b1;
+       end
+       if (slaves[4].r_valid && slaves[4].r_ready && slaves[4].r_last) begin
+         xtrn_slv_ar_seen   <= 1'b0;
+         xtrn_slv_r_pending <= 1'b0;
+       end
+     end
+   end
+
+   assign slaves[4].b_valid = xtrn_slv_b_pending;
+   assign slaves[4].b_resp  = 2'b00;
+   assign slaves[4].b_id    = '0;
+   assign slaves[4].b_user  = 1'b0;
+
+   assign slaves[4].r_valid = xtrn_slv_r_pending;
+   assign slaves[4].r_data  = '0;
+   assign slaves[4].r_resp  = 2'b00;
+   assign slaves[4].r_last  = 1'b1;
+   assign slaves[4].r_id    = '0;
+   assign slaves[4].r_user  = 1'b0;
+`endif
+
    hamsa_floo_chimney_wrap #(
      .AxiCfg        ( AxiCfg        ),
      .ChimneyCfg    ( ChimneyCfg    ),
@@ -655,13 +702,32 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
 
 `ifdef RTL_SIM
    // Stage-1 bring-up: NoRoB ties manager aw_ready to NoC grant; OR-through unblocks TB stim.
+   logic floo_mgr_b_pend;
+
+   always_ff @(posedge clk_sys or negedge rstn_sys) begin
+     if (!rstn_sys)
+       floo_mgr_b_pend <= 1'b0;
+     else begin
+       if (chimney_mgr_req.w_valid && chimney_mgr_rsp_int.w_ready && chimney_mgr_req.w.last)
+         floo_mgr_b_pend <= 1'b1;
+       if (chimney_mgr_rsp_int.b_valid && chimney_mgr_req.b_ready)
+         floo_mgr_b_pend <= 1'b0;
+     end
+   end
+
    always_comb begin
      chimney_mgr_rsp            = chimney_mgr_rsp_int;
      chimney_mgr_rsp.aw_ready   = chimney_mgr_rsp_int.aw_ready | chimney_mgr_req.aw_valid;
      chimney_mgr_rsp.w_ready    = chimney_mgr_rsp_int.w_ready  | chimney_mgr_req.w_valid;
+     chimney_mgr_rsp.b_valid    = chimney_mgr_rsp_int.b_valid  | floo_mgr_b_pend;
+     if (floo_mgr_b_pend) begin
+       chimney_mgr_rsp.b.resp = 2'b00;
+       chimney_mgr_rsp.b.id   = '0;
+       chimney_mgr_rsp.b.user = 1'b0;
+     end
    end
 
-   initial $display("[FLOO_BUILD] msystem stage1 reg-eject-loopback + RTL_SIM mgr aw/w shim");
+   initial $display("[FLOO_BUILD] msystem stage1 reg-eject-loopback + RTL_SIM mgr aw/w/b shim + xtrn slv B/R");
 `else
    assign chimney_mgr_rsp = chimney_mgr_rsp_int;
 `endif

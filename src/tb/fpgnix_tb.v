@@ -305,6 +305,14 @@ integer            floo_stim_cycles;
 integer            floo_stim_start_delay;
 integer            floo_stim_max_cycles;
 
+initial begin : floo_boot_diag
+    #10_000_000; // 10 ms after time 0
+    $display("[FLOO_BOOT] enable_core=%b ndmreset=%b rstn_sys=%b (expect 1,0,1)",
+             fpgnix.vqm_msystem_wrap.enable_core,
+             fpgnix.vqm_msystem_wrap.ndmreset,
+             fpgnix.vqm_msystem_wrap.rstn_sys);
+end
+
 initial begin
     floo_stim_start_delay = 500;
     floo_stim_max_cycles  = 50000;
