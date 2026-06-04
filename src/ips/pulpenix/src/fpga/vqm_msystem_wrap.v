@@ -93,10 +93,10 @@ assign s_gpp_master_bus.pslverr = gpp_master_pslverr ;
    
 msystem msystem (
                  .gpp_master            (s_gpp_master_bus),
-                 .floo_req_o            (floo_req_o_s),
-                 .floo_rsp_o            (floo_rsp_o_s),
-                 .floo_req_i            (floo_req_i_s),
-                 .floo_rsp_i            (floo_rsp_i_s),
+                 .floo_north_req_o      (floo_req_o_s),
+                 .floo_north_rsp_o      (floo_rsp_o_s),
+                 .floo_north_req_i      (floo_req_i_s),
+                 .floo_north_rsp_i      (floo_rsp_i_s),
 
                  .ndmreset              (ndmreset),             
                  .pad_mmspi_cs_o        (),                     

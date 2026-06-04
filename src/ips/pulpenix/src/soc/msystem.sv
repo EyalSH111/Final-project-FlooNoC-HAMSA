@@ -69,10 +69,11 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
     // External GPP APB master I/F towards the SoC extension modules:
     APB_BUS.Master              gpp_master ,
 
-    output floo_hamsa_pkg::floo_req_t floo_req_o,
-    output floo_hamsa_pkg::floo_rsp_t floo_rsp_o,
-    input  floo_hamsa_pkg::floo_req_t floo_req_i,
-    input  floo_hamsa_pkg::floo_rsp_t floo_rsp_i,
+    // North mesh port (names avoid XRUN resolving chimney floo_req_o to parent)
+    output floo_hamsa_pkg::floo_req_t floo_north_req_o,
+    output floo_hamsa_pkg::floo_rsp_t floo_north_rsp_o,
+    input  floo_hamsa_pkg::floo_req_t floo_north_req_i,
+    input  floo_hamsa_pkg::floo_rsp_t floo_north_rsp_i,
 
     input logic                 pad_testmode_i ,
     input logic                 pad_scan_enable_i ,
@@ -549,10 +550,10 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
    localparam int unsigned PortWest  = 3;
    localparam int unsigned PortEject = 4;
 
-   assign router_req_in[PortNorth] = floo_req_i;
-   assign router_rsp_out[PortNorth] = floo_rsp_o;
-   assign floo_req_o = router_req_out[PortNorth];
-   assign floo_rsp_o = router_rsp_in[PortNorth];
+   assign router_req_in[PortNorth]  = floo_north_req_i;
+   assign router_rsp_out[PortNorth] = floo_north_rsp_o;
+   assign floo_north_req_o          = router_req_out[PortNorth];
+   assign floo_north_rsp_i          = router_rsp_in[PortNorth];
 
    assign router_req_in[PortEast]  = '0;
    assign router_req_in[PortSouth] = '0;
@@ -568,8 +569,8 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
 
 `else // FLOO_CHIMNEY_DISABLED — break test: xtrn isolated from NoC
 
-   assign floo_req_o = '0;
-   assign floo_rsp_o = '0;
+   assign floo_north_req_o = '0;
+   assign floo_north_rsp_o = '0;
 
 `endif
 
