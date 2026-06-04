@@ -432,9 +432,10 @@ always @(posedge floo_tb_clk) begin
 end
 
 // Hard stop so xrun does not hang (override: +FLOO_SIM_TIMEOUT_NS=<ns>)
+// Default 5s: leave time for core boot + UART after FLOO_MON (~500ms).
 initial begin : floo_sim_timeout
     integer tout_ns;
-    tout_ns = TIMEOUT;
+    tout_ns = 5_000_000_000;
     void'($value$plusargs("FLOO_SIM_TIMEOUT_NS=%d", tout_ns));
     #(tout_ns);
     $display("[FLOO_TB] simulation timeout %0d ns — $finish", tout_ns);
