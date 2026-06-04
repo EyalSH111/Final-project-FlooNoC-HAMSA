@@ -8,7 +8,8 @@
 
 -f $PULP_ENV/src/ips/floo_noc/floo_noc_deps.f
 
-$PULP_ENV/src/ips/floo_noc/hw/floo_pkg.sv
+// XRUN 23.x: compile floo_pkg alone (not under hw/ — same-dir batch breaks NOPBIND)
+$PULP_ENV/src/ips/floo_noc/xrun_compat/floo_pkg/floo_pkg.sv
 // XRUN 23.x compat cells (single files — not under deps/common_cells/src)
 $PULP_ENV/src/ips/floo_noc/xrun_compat/id_queue.sv
 $PULP_ENV/src/ips/floo_noc/xrun_compat/spill_register_flushable.sv

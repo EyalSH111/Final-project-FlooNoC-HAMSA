@@ -4,19 +4,19 @@
 `include "axi/typedef.svh"
 `include "axi/assign.svh"
 
+import floo_hamsa_pkg::*;
+
 module hamsa_floo_xtrn_glue #(
   parameter int unsigned HAMSA_MGR_ID_WIDTH = 2,
   parameter int unsigned HAMSA_SLV_ID_WIDTH = 5
 ) (
   AXI_BUS.Master xtrn_initiator,
   AXI_BUS.Slave  xtrn_target,
-  output floo_hamsa_pkg::axi_in_req_t  chimney_mgr_req_o,
-  input  floo_hamsa_pkg::axi_in_rsp_t  chimney_mgr_rsp_i,
-  input  floo_hamsa_pkg::axi_out_req_t chimney_slv_req_i,
-  output floo_hamsa_pkg::axi_out_rsp_t chimney_slv_rsp_o
+  output axi_in_req_t  chimney_mgr_req_o,
+  input  axi_in_rsp_t  chimney_mgr_rsp_i,
+  input  axi_out_req_t chimney_slv_req_i,
+  output axi_out_rsp_t chimney_slv_rsp_o
 );
-
-  import floo_hamsa_pkg::*;
 
   axi_in_req_t  mgr_req;
   axi_in_rsp_t  mgr_rsp;

@@ -10,8 +10,8 @@
 -f $PULP_ENV/src/ips/floo_noc/floo_noc.f
 +incdir+$PULP_ENV/src/ips/floo_noc/hw/include
 +incdir+$PULP_ENV/src/ips/floo_noc/deps/axi/include
-// NOPBIND fix: compile floo_hamsa_pkg immediately after floo_pkg (before fpgnix.f / pulpenix)
-$PULP_ENV/src/ips/pulpenix/src/soc/floo_hamsa_pkg.sv
+// NOPBIND fix: solo dir — not under soc/ (XRUN same-directory batch)
+$PULP_ENV/src/ips/floo_noc/xrun_compat/floo_hamsa_pkg/floo_hamsa_pkg.sv
 -f $PULP_ENV/src/ips/pulpenix/fpgnix.f
 
 //FILES
