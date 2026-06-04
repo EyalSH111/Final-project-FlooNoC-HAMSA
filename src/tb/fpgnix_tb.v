@@ -289,6 +289,36 @@ end
 assign fpgnix.floo_req_i = floo_req_i_lb;
 assign fpgnix.floo_rsp_i = floo_rsp_i_lb;
 
+// Stage-1: axi_node port 4 is stubbed; drive one AXI write on masters[4] into the chimney.
+initial begin : floo_axi_stim
+    wait (rst_n === 1'b1);
+    repeat (2000) @(posedge floo_tb_clk);
+
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid  <= 1'b1;
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_addr   <= 32'h1AC0_0000;
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_id     <= 2'b0;
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_len    <= 8'h0;
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_size   <= 3'b010;
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_burst  <= 2'b01;
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_valid   <= 1'b0;
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready   <= 1'b0;
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].r_ready   <= 1'b0;
+
+    do @(posedge floo_tb_clk); while (!fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_ready);
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid  <= 1'b0;
+
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_valid   <= 1'b1;
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_data   <= 32'hF100_F100;
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_strb    <= 4'hF;
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_last    <= 1'b1;
+    do @(posedge floo_tb_clk); while (!fpgnix.vqm_msystem_wrap.msystem.masters[4].w_ready);
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_valid   <= 1'b0;
+
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready   <= 1'b1;
+    do @(posedge floo_tb_clk); while (!fpgnix.vqm_msystem_wrap.msystem.masters[4].b_valid);
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready   <= 1'b0;
+end
+
 integer floo_flit_count;
 reg     floo_mon_reported;
 initial begin
@@ -302,7 +332,7 @@ task floo_mon_report;
             floo_mon_reported = 1'b1;
             $display("[FLOO_MON] SUMMARY: cumulative flits=%0d", floo_flit_count);
             if (floo_flit_count == 0)
-                $display("[FLOO_MON] FAIL: zero flits observed on u_hamsa_chimney.floo_req_o");
+                $display("[FLOO_MON] FAIL: zero flits observed on u_hamsa_chimney.flit_req_out_o");
             else
                 $display("[FLOO_MON] PASS: non-zero flit activity through FlooNoC chimney");
         end
