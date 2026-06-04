@@ -523,7 +523,7 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
 
    floo_axi_router #(
      .AxiCfg       ( AxiCfg       ),
-     .RouteAlgo    ( XYRouting    ),
+     .RouteAlgo    ( floo_pkg::XYRouting ),
      .NumRoutes    ( NumRoutes    ),
      .NumInputs    ( NumRoutes    ),
      .NumOutputs   ( NumRoutes    ),

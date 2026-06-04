@@ -326,8 +326,6 @@ initial begin : floo_mon_watchdog
     floo_mon_report();
 end
 
-final begin
-    floo_mon_report();
-end
+// XRUN: final blocks cannot call tasks (BADTFB); initial watchdog above is sufficient
 
 endmodule
