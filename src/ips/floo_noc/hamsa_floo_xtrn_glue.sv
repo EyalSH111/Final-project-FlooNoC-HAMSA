@@ -88,7 +88,7 @@ module hamsa_floo_xtrn_glue #(
     xtrn_initiator.r_id     = trunc_mgr_id(mgr_rsp.r.id);
     xtrn_initiator.r_data   = mgr_rsp.r.data;
     xtrn_initiator.r_resp   = mgr_rsp.r.resp;
-    xtrn_initiator.r_last   = mgr_rsp.r_last;
+    xtrn_initiator.r_last   = mgr_rsp.r.last;
     xtrn_initiator.r_user   = mgr_rsp.r.user;
   end
 
@@ -117,10 +117,10 @@ module hamsa_floo_xtrn_glue #(
     xtrn_target.ar_len   = slv_req.ar.len;
     xtrn_target.ar_size  = slv_req.ar.size;
     xtrn_target.ar_burst = slv_req.ar.burst;
-    xtrn_target.ar_lock  = slv_req.ar_lock;
-    xtrn_target.ar_cache = slv_req.ar_cache;
-    xtrn_target.ar_prot  = slv_req.ar_prot;
-    xtrn_target.ar_qos   = slv_req.ar_qos;
+    xtrn_target.ar_lock   = slv_req.ar.lock;
+    xtrn_target.ar_cache  = slv_req.ar.cache;
+    xtrn_target.ar_prot   = slv_req.ar.prot;
+    xtrn_target.ar_qos    = slv_req.ar.qos;
     xtrn_target.ar_region = slv_req.ar.region;
     xtrn_target.ar_id    = trunc_slv_id(slv_req.ar.id);
     xtrn_target.ar_user  = slv_req.ar.user;
