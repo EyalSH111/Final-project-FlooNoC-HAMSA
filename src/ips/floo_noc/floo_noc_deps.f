@@ -3,7 +3,7 @@
 // fifo_v3, rr_arb_tree, cdc_2phase, id_queue: from HAMSA + floo_noc.f xrun_compat
 +incdir+$PULP_ENV/src/ips/floo_noc/deps/axi/include
 +incdir+$PULP_ENV/src/ips/floo_noc/deps/common_cells/include
-+incdir+$PULP_ENV/src/ips/floo_noc/deps/common_cells
+// (no +incdir on deps/common_cells/src — XRUN would compile every .sv twice)
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/cf_math_pkg.sv
 $PULP_ENV/src/ips/floo_noc/deps/axi/src/axi_pkg.sv
 $PULP_ENV/src/ips/floo_noc/deps/axi/src/axi_intf.sv

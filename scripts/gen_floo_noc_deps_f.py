@@ -42,7 +42,7 @@ def main() -> None:
         "// fifo_v3, rr_arb_tree, cdc_2phase, id_queue: from HAMSA + floo_noc.f xrun_compat\n",
         "+incdir+$PULP_ENV/src/ips/floo_noc/deps/axi/include\n",
         "+incdir+$PULP_ENV/src/ips/floo_noc/deps/common_cells/include\n",
-        "+incdir+$PULP_ENV/src/ips/floo_noc/deps/common_cells\n",
+        "// (no +incdir on deps/common_cells/src — XRUN would compile every .sv twice)\n",
     ]
     for rel in DEPS_SOURCES:
         path = ROOT / rel
