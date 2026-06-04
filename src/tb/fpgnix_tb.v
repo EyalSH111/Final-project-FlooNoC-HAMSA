@@ -415,8 +415,10 @@ task floo_mon_report;
             $display("[FLOO_MON] SUMMARY: cumulative flits=%0d", floo_flit_count);
             if (floo_flit_count == 0)
                 $display("[FLOO_MON] FAIL: zero flits observed on u_hamsa_chimney.flit_req_out_o");
-            else
+            else begin
                 $display("[FLOO_MON] PASS: non-zero flit activity through FlooNoC chimney");
+                $display("[FLOO_TB] UART check: grep -E \"Hey|FINISH\" helloworld/xrun.log after sim ends");
+            end
         end
     end
 endtask
@@ -431,15 +433,15 @@ always @(posedge floo_tb_clk) begin
     end
 end
 
-// Hard stop so xrun does not hang (override: +FLOO_SIM_TIMEOUT_NS=<ns>)
-// Default 5s: leave time for core boot + UART after FLOO_MON (~500ms).
+// Safety stop so xrun does not hang forever (override: +FLOO_SIM_TIMEOUT_NS=<ns>)
+// Default 60s: FLOO_MON runs ~500ms; core boot + UART need more time than 1–5s.
 initial begin : floo_sim_timeout
     integer tout_ns;
-    tout_ns = 5_000_000_000;
+    tout_ns = 60_000_000_000;
     void'($value$plusargs("FLOO_SIM_TIMEOUT_NS=%d", tout_ns));
     #(tout_ns);
-    $display("[FLOO_TB] simulation timeout %0d ns — $finish", tout_ns);
     floo_mon_report();
+    $display("[FLOO_TB] safety timeout %0d ns — $finish (grep FINISH / Hey in xrun.log)", tout_ns);
     $finish(2);
 end
 
