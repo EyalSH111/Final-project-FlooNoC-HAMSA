@@ -16,7 +16,9 @@ module hamsa_floo_chimney_wrap #(
   parameter type                      axi_out_req_t = logic,
   parameter type                      axi_out_rsp_t = logic,
   parameter type                      floo_req_t    = logic,
-  parameter type                      floo_rsp_t    = logic
+  parameter type                      floo_rsp_t    = logic,
+  parameter type                      sram_cfg_t    = logic,
+  parameter type                      route_t       = logic
 ) (
   input  logic         clk_i,
   input  logic         rst_ni,
@@ -27,7 +29,7 @@ module hamsa_floo_chimney_wrap #(
   output axi_out_req_t axi_out_req_o,
   input  axi_out_rsp_t axi_out_rsp_i,
   input  id_t          id_i,
-  input  route_t [RouteCfg.NumRoutes-1:0] route_table_i,
+  input  route_t       route_table_i [RouteCfg.NumRoutes-1:0],
   output floo_req_t    flit_req_out_o,
   output floo_rsp_t    flit_rsp_out_o,
   input  floo_req_t    flit_req_in_i,
@@ -47,7 +49,9 @@ module hamsa_floo_chimney_wrap #(
     .axi_out_req_t ( axi_out_req_t ),
     .axi_out_rsp_t ( axi_out_rsp_t ),
     .floo_req_t    ( floo_req_t    ),
-    .floo_rsp_t    ( floo_rsp_t    )
+    .floo_rsp_t    ( floo_rsp_t    ),
+    .sram_cfg_t    ( sram_cfg_t    ),
+    .route_t       ( route_t       )
   ) u_chimney (
     .clk_i         ( clk_i         ),
     .rst_ni        ( rst_ni        ),

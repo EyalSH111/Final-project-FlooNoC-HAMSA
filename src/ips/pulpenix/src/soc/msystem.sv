@@ -459,8 +459,38 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
      .AXI_USER_WIDTH ( `AXI_USER_WIDTH     )
    ) axi_xtrn_slv_stub ();
 
+   AXI_BUS #(
+     .AXI_ADDR_WIDTH ( `AXI_ADDR_WIDTH      ),
+     .AXI_DATA_WIDTH ( `AXI_DATA_WIDTH      ),
+     .AXI_ID_WIDTH   ( `AXI_ID_MASTER_WIDTH ),
+     .AXI_USER_WIDTH ( `AXI_USER_WIDTH      )
+   ) axi_node_slaves[5:0]();
+
+   AXI_BUS #(
+     .AXI_ADDR_WIDTH ( `AXI_ADDR_WIDTH     ),
+     .AXI_DATA_WIDTH ( `AXI_DATA_WIDTH     ),
+     .AXI_ID_WIDTH   ( `AXI_ID_SLAVE_WIDTH ),
+     .AXI_USER_WIDTH ( `AXI_USER_WIDTH     )
+   ) axi_node_masters[4:0]();
+
    `AXI_DEGENERATE_MASTER(axi_xtrn_mst_stub)
    `AXI_DEGENERATE_SLAVE(axi_xtrn_slv_stub)
+
+   genvar axi_floo_i;
+   generate
+     for (axi_floo_i = 0; axi_floo_i < 4; axi_floo_i++) begin : gen_axi_node_slave
+       `AXI_ASSIGN_SLAVE(axi_node_slaves[axi_floo_i], masters[axi_floo_i])
+     end
+     `AXI_ASSIGN_SLAVE(axi_node_slaves[4], axi_xtrn_mst_stub)
+     `AXI_ASSIGN_SLAVE(axi_node_slaves[5], masters[5])
+   endgenerate
+
+   generate
+     for (axi_floo_i = 0; axi_floo_i < 4; axi_floo_i++) begin : gen_axi_node_master
+       `AXI_ASSIGN_MASTER(axi_node_masters[axi_floo_i], slaves[axi_floo_i])
+     end
+     `AXI_ASSIGN_MASTER(axi_node_masters[4], axi_xtrn_slv_stub)
+   endgenerate
 `endif
 
    axi_node_intf_wrap #(
@@ -480,8 +510,8 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
                        .master    ( slaves           ),
                        .slave     ( masters          ),
 `else
-                       .master    ( {slaves[3:0], axi_xtrn_slv_stub} ),
-                       .slave     ( {masters[5], axi_xtrn_mst_stub, masters[3:0]} ),
+                       .master    ( axi_node_masters ),
+                       .slave     ( axi_node_slaves  ),
 `endif
 
                        .start_addr_i ( { 32'h1AC0_0000, 32'h1A80_0000, 32'h1A10_0000, 32'h0010_0000, 32'h0000_0000 } ),
