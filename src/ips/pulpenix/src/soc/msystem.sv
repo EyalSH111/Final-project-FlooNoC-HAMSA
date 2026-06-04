@@ -543,6 +543,11 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
      .chimney_slv_rsp_o ( chimney_slv_rsp )
    );
 
+   // axi_node target port 4 is stubbed; chimney axi_out still uses slaves[4] and needs ready.
+   assign slaves[4].aw_ready = 1'b1;
+   assign slaves[4].ar_ready = 1'b1;
+   assign slaves[4].w_ready  = 1'b1;
+
    hamsa_floo_chimney_wrap #(
      .AxiCfg        ( AxiCfg        ),
      .ChimneyCfg    ( ChimneyCfg    ),
