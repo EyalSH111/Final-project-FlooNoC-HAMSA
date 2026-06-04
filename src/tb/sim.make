@@ -240,9 +240,13 @@ endif
 xrun-errors:
 	@grep '\*E' $(APP_RUN_DIR)/xrun.log 2>/dev/null | head -20 || echo "No xrun.log or no *E lines in $(APP_RUN_DIR)/"
 
+# Repo root from this makefile (src/tb/sim.make), not $PULP_ENV — avoids ws/ddp23/ddp23_pnx mismatch
+_REPO_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/../..)
 .PHONY: fix-floo-xrun-deps
 fix-floo-xrun-deps:
-	bash $(PULP_ENV)/scripts/fix_floo_xrun_dupuni.sh
+	@test -f $(_REPO_ROOT)/scripts/fix_floo_xrun_dupuni.sh || \
+	  (echo "ERROR: missing $(_REPO_ROOT)/scripts/fix_floo_xrun_dupuni.sh — git pull on this repo"; exit 1)
+	bash $(_REPO_ROOT)/scripts/fix_floo_xrun_dupuni.sh
 
 .PHONY: compile
 ifeq ($(FLOO_NOC_REGEN), 1)

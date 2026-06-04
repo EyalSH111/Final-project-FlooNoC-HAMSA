@@ -19,8 +19,10 @@ git push origin ddp23_pnx_PoC
 
 ```bash
 cd /data/project/tsmc65/users/eyalsho/ws/ddp23_pnx_PoC
-git rebase --abort 2>/dev/null; git merge --abort 2>/dev/null; true
-git fetch origin && git reset --hard origin/ddp23_pnx_PoC
+export PULP_ENV=/data/project/tsmc65/users/eyalsho/ws/ddp23_pnx_PoC
+git pull origin ddp23_pnx_PoC
 rm -rf helloworld/xcelium.d helloworld/INCA_libs
 make -f src/tb/sim.make APP=helloworld
 ```
+
+`PULP_ENV` must be **this PoC tree**, not `.../ws/ddp23/ddp23_pnx`.
