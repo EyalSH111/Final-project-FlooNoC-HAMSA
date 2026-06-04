@@ -26,7 +26,8 @@ fi
 
 APP=helloworld
 LOG="${APP}/xrun.log"
-rm -f "$LOG"
+# Avoid stale xrun.log when backup rotation did not move helloworld (e.g. helloworld.1 exists).
+rm -f "$LOG" "${APP}.1/xrun.log" 2>/dev/null || true
 rm -rf "${APP}/xcelium.d" "${APP}/INCA_libs"
 
 echo "=== make run (full compile + irun; may take several minutes) ==="
