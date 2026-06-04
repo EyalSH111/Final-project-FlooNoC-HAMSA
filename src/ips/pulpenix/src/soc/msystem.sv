@@ -443,6 +443,26 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
    // Axi node
    //----------------------------------------------------------------------------//
 
+`ifndef FLOO_CHIMNEY_DISABLED
+   // xtrn (masters[4]/slaves[4]) is owned by Floo glue only — stub node port 4.
+   AXI_BUS #(
+     .AXI_ADDR_WIDTH ( `AXI_ADDR_WIDTH      ),
+     .AXI_DATA_WIDTH ( `AXI_DATA_WIDTH      ),
+     .AXI_ID_WIDTH   ( `AXI_ID_MASTER_WIDTH ),
+     .AXI_USER_WIDTH ( `AXI_USER_WIDTH      )
+   ) axi_xtrn_mst_stub ();
+
+   AXI_BUS #(
+     .AXI_ADDR_WIDTH ( `AXI_ADDR_WIDTH     ),
+     .AXI_DATA_WIDTH ( `AXI_DATA_WIDTH     ),
+     .AXI_ID_WIDTH   ( `AXI_ID_SLAVE_WIDTH ),
+     .AXI_USER_WIDTH ( `AXI_USER_WIDTH     )
+   ) axi_xtrn_slv_stub ();
+
+   `AXI_DEGENERATE_MASTER(axi_xtrn_mst_stub)
+   `AXI_DEGENERATE_SLAVE(axi_xtrn_slv_stub)
+`endif
+
    axi_node_intf_wrap #(
                         .NB_MASTER      ( 5                    ),
                         .NB_SLAVE       ( 6                    ),
@@ -456,8 +476,13 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
                        .rst_n     ( rstn_sys         ),
                        .test_en_i ( pad_testmode_i   ),
 
+`ifdef FLOO_CHIMNEY_DISABLED
                        .master    ( slaves           ),
                        .slave     ( masters          ),
+`else
+                       .master    ( {slaves[3:0], axi_xtrn_slv_stub} ),
+                       .slave     ( {masters[5], axi_xtrn_mst_stub, masters[3:0]} ),
+`endif
 
                        .start_addr_i ( { 32'h1AC0_0000, 32'h1A80_0000, 32'h1A10_0000, 32'h0010_0000, 32'h0000_0000 } ),
                        .end_addr_i   ( { 32'hFFFF_FFFF, 32'h1ABF_FFFF, 32'h1A4F_FFFF, 32'h001F_FFFF, 32'h000F_FFFF } )
@@ -491,7 +516,7 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
      .chimney_slv_rsp_o ( chimney_slv_rsp )
    );
 
-   floo_axi_chimney #(
+   hamsa_floo_chimney_wrap #(
      .AxiCfg        ( AxiCfg        ),
      .ChimneyCfg    ( ChimneyCfg    ),
      .RouteCfg      ( RouteCfg      ),
@@ -506,20 +531,20 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
      .floo_req_t    ( floo_req_t    ),
      .floo_rsp_t    ( floo_rsp_t    )
    ) u_hamsa_chimney (
-     .clk_i         ( clk_sys              ),
-     .rst_ni        ( rstn_sys             ),
-     .test_enable_i ( pad_testmode_i       ),
-     .sram_cfg_i    ( '0                   ),
-     .axi_in_req_i  ( chimney_mgr_req      ),
-     .axi_in_rsp_o  ( chimney_mgr_rsp      ),
-     .axi_out_req_o ( chimney_slv_req      ),
-     .axi_out_rsp_i ( chimney_slv_rsp      ),
-     .id_i          ( TileId               ),
-     .route_table_i ( '0                   ),
-     .floo_req_o    ( chimney_floo_req_o   ),
-     .floo_rsp_o    ( chimney_floo_rsp_o   ),
-     .floo_req_i    ( chimney_floo_req_i   ),
-     .floo_rsp_i    ( chimney_floo_rsp_i   )
+     .clk_i           ( clk_sys              ),
+     .rst_ni          ( rstn_sys             ),
+     .test_enable_i   ( pad_testmode_i       ),
+     .sram_cfg_i      ( '0                   ),
+     .axi_in_req_i    ( chimney_mgr_req      ),
+     .axi_in_rsp_o    ( chimney_mgr_rsp      ),
+     .axi_out_req_o   ( chimney_slv_req      ),
+     .axi_out_rsp_i   ( chimney_slv_rsp      ),
+     .id_i            ( TileId               ),
+     .route_table_i   ( '0                   ),
+     .flit_req_out_o  ( chimney_floo_req_o   ),
+     .flit_rsp_out_o  ( chimney_floo_rsp_o   ),
+     .flit_req_in_i   ( chimney_floo_req_i   ),
+     .flit_rsp_in_i   ( chimney_floo_rsp_i   )
    );
 
    floo_axi_router #(

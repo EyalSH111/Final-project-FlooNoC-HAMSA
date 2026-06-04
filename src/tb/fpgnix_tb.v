@@ -310,7 +310,7 @@ task floo_mon_report;
 endtask
 
 always @(posedge floo_tb_clk) begin
-    if (fpgnix.vqm_msystem_wrap.msystem.u_hamsa_chimney.floo_req_o.valid) begin
+    if (fpgnix.vqm_msystem_wrap.msystem.u_hamsa_chimney.flit_req_out_o.valid) begin
         floo_flit_count <= floo_flit_count + 1;
         $display("[FLOO_MON] time=%0t chimney floo_req_o.valid flit_count=%0d",
                  $time, floo_flit_count + 1);
