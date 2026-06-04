@@ -1,4 +1,5 @@
 // Thin wrapper so XRUN does not resolve chimney floo_req_o/floo_rsp_o to parent nets.
+// Splits link .ready from .valid/.req/.rsp so the parent can tie stage-1 loopback.
 
 import floo_hamsa_pkg::*;
 
@@ -31,6 +32,9 @@ module hamsa_floo_chimney_wrap #(
   input  floo_rsp_t    flit_rsp_in_i
 );
 
+  floo_req_t chimney_req_o;
+  floo_rsp_t chimney_rsp_o;
+
   floo_axi_chimney #(
     .AxiCfg        ( AxiCfg        ),
     .ChimneyCfg    ( ChimneyCfg    ),
@@ -56,10 +60,18 @@ module hamsa_floo_chimney_wrap #(
     .axi_out_rsp_i ( axi_out_rsp_i ),
     .id_i          ( id_i          ),
     .route_table_i ( '0            ),
-    .floo_req_o    ( flit_req_out_o ),
-    .floo_rsp_o    ( flit_rsp_out_o ),
-    .floo_req_i    ( flit_req_in_i  ),
-    .floo_rsp_i    ( flit_rsp_in_i  )
+    .floo_req_o    ( chimney_req_o ),
+    .floo_rsp_o    ( chimney_rsp_o ),
+    .floo_req_i    ( flit_req_in_i ),
+    .floo_rsp_i    ( flit_rsp_in_i )
   );
+
+  assign flit_req_out_o.valid = chimney_req_o.valid;
+  assign flit_req_out_o.req   = chimney_req_o.req;
+  assign flit_req_out_o.ready = flit_req_in_i.ready;
+
+  assign flit_rsp_out_o.valid = chimney_rsp_o.valid;
+  assign flit_rsp_out_o.rsp   = chimney_rsp_o.rsp;
+  assign flit_rsp_out_o.ready = flit_rsp_in_i.ready;
 
 endmodule

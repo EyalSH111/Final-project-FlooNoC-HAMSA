@@ -630,10 +630,18 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
    assign router_rsp_out[PortSouth] = '0;
    assign router_rsp_out[PortWest]  = '0;
 
-   assign router_req_in[PortEject]  = chimney_floo_req_o;
-   assign router_rsp_out[PortEject] = chimney_floo_rsp_o;
-   assign chimney_floo_req_i        = router_req_out[PortEject];
-   assign chimney_floo_rsp_i        = router_rsp_in[PortEject];
+   // Stage-1 single tile: comb eject loopback (router eject path still unused for North mesh)
+   assign router_req_in[PortEject]  = '0;
+   assign router_rsp_out[PortEject] = '0;
+   assign router_rsp_in[PortEject]  = '0;
+
+   assign chimney_floo_req_i.valid = chimney_floo_req_o.valid;
+   assign chimney_floo_req_i.req   = chimney_floo_req_o.req;
+   assign chimney_floo_req_i.ready = 1'b1;
+
+   assign chimney_floo_rsp_i.valid = chimney_floo_rsp_o.valid;
+   assign chimney_floo_rsp_i.rsp   = chimney_floo_rsp_o.rsp;
+   assign chimney_floo_rsp_i.ready = 1'b1;
 
 `else // FLOO_CHIMNEY_DISABLED — break test: xtrn isolated from NoC
 
