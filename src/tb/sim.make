@@ -188,6 +188,16 @@ ifneq ($(TIMEOUT),)
   _XRUN_FLAGS +=  -defparam pulpenix_tb.timeout=$(TIMEOUT)
 endif
 
+# REBUILD=true — wipe snapshot / -clean so msystem.sv RTL edits are re-elaborated.
+REBUILD ?= false
+_IRUN_EXTRA :=
+ifeq ($(REBUILD), true)
+  _IRUN_EXTRA += -clean
+endif
+
+.PHONY: clean-xrun
+clean-xrun:
+	\rm -rf ${APP_RUN_DIR}/xcelium.d ${APP_RUN_DIR}/INCA_libs
 
 .PHONY:all
 all: backup run 
@@ -217,10 +227,13 @@ backup:
 
 .PHONY: run
 run: compile
+ifeq ($(REBUILD), true)
+	$(MAKE) -f ${PULP_ENV}/src/tb/sim.make APP=${APP} clean-xrun
+endif
 	mkdir -p ${APP_RUN_DIR}
 	\rm -f ${APP_RUN_DIR}/app_src_dir
 	ln -s ${APP_SRC_DIR} ${APP_RUN_DIR}/app_src_dir    
-	cd ${APP_RUN_DIR} && ${IRUN} ${_XRUN_FLAGS} ${IRUN_F_FILES}
+	cd ${APP_RUN_DIR} && ${IRUN} ${_IRUN_EXTRA} ${_XRUN_FLAGS} ${IRUN_F_FILES}
 
 .PHONY: run_only
 run_only: ${APP_RUN_DIR}/slm_files/app_instr.mif ${LIBRARIES}
