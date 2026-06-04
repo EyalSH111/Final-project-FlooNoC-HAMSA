@@ -125,8 +125,13 @@ msystem msystem (
                  .regfile_select_i      ('h1),                  
                  .instr_ram_sel_i       ('h0),                  
                  .data_ram_sel_i        ('h0),                  
-                 .enable_core           (enable_core),          
-                 .pad_testmode_i        ('h0),                  
+                 .enable_core           (enable_core),
+`ifdef RTL_SIM
+                 // Un-gate APB peripheral clocks (incl. UART) before SW writes CGREG.
+                 .pad_testmode_i        ('h1),
+`else
+                 .pad_testmode_i        ('h0),
+`endif
                  .pad_scan_enable_i     ('h0),                  
                  .pad_master_slave      ('h0),                  
                  .mmspi_d_clk           ('h0),                  

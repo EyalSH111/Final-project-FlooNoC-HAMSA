@@ -738,7 +738,7 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
      end
    end
 
-   initial $display("[FLOO_BUILD] msystem stage1 reg-eject-loopback + RTL_SIM mgr aw/w/b shim + xtrn slv B/R + core fetch/clk bypass");
+   initial $display("[FLOO_BUILD] msystem stage1 RTL_SIM: floo shims + core fetch/clk bypass (see vqm wrap testmode for UART clk)");
 `else
    assign chimney_mgr_rsp = chimney_mgr_rsp_int;
 `endif
