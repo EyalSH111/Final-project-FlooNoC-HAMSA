@@ -51,7 +51,8 @@ OBJCOPY =	${PREFIX}-objcopy
 
 PULP_APPS = ${PULP_ENV}/src/ips/pulpenix_sw/apps
 PULP_SW_UTILS = ${PULP_APPS}/sw_utils
-S19TOSLM = ${PULP_SW_UTILS}/s19toslm.py
+PYTHON ?= python2.7
+S19TOSLM = $(PYTHON) ${PULP_SW_UTILS}/s19toslm.py
 PULP_LIBS = ${PULP_APPS}/libs
 PULP_SW_APPS_REF = ${PULP_APPS}/ref
 
