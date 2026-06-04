@@ -305,6 +305,15 @@ integer            floo_stim_cycles;
 integer            floo_stim_start_delay;
 integer            floo_stim_max_cycles;
 
+`ifdef RTL_SIM
+// APB UART clock is gated until SW writes CGREG; testmode ungates all peripheral clocks.
+initial begin : floo_periph_clk_bypass
+    wait (fpgnix.vqm_msystem_wrap.rstn_sys === 1'b1);
+    force fpgnix.vqm_msystem_wrap.msystem.peripherals_i.peripheral_clock_gate_ctrl = 32'hFFFF_FFFF;
+    $display("[FLOO_TB] RTL_SIM: forced peripheral_clock_gate_ctrl=all1 (UART/APB clocks)");
+end
+`endif
+
 initial begin : floo_boot_diag
     #10_000_000; // 10 ms after time 0
     $display("[FLOO_BOOT] enable_core=%b ndmreset=%b rstn_sys=%b fetch_int=%b clk_gate=%b (expect 1,0,1,?,1)",
