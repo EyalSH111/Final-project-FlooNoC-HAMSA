@@ -611,6 +611,9 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
    assign floo_north_req_o          = router_req_out[PortNorth];
    assign floo_north_rsp_o          = router_rsp_out[PortNorth];
    assign router_rsp_in[PortNorth]  = floo_north_rsp_i;
+   // TB loopback does not drive link.ready; tie so router/North can accept return-path credits
+   assign floo_north_req_i.ready    = 1'b1;
+   assign floo_north_rsp_i.ready    = 1'b1;
 
    assign router_req_in[PortEast]  = '0;
    assign router_req_in[PortSouth] = '0;

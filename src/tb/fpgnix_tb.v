@@ -303,7 +303,8 @@ initial begin : floo_axi_stim
     fpgnix.vqm_msystem_wrap.msystem.masters[4].r_ready   <= 1'b0;
 
     fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid  <= 1'b1;
-    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_addr   <= 32'h1AC0_0000;
+    // XY decode uses addr[16]=x, addr[20]=y; tile is (0,0) — use local address so flits eject to chimney
+    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_addr   <= 32'h0000_0000;
     fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_id     <= 2'b0;
     fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_len    <= 8'h0;
     fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_size  <= 3'b010;
@@ -387,7 +388,7 @@ end
 // XRUN often skips `final` when the testbench calls $finish; schedule an explicit report too.
 initial begin : floo_mon_watchdog
     integer delay_ns;
-    delay_ns = 200_000_000; // 200 ms @ 1ns timescale (override: +FLOO_MON_DELAY=<ns>)
+    delay_ns = 500_000_000; // 500 ms — allow TB AXI stim + core UART (override: +FLOO_MON_DELAY=<ns>)
     void'($value$plusargs("FLOO_MON_DELAY=%d", delay_ns));
     #(delay_ns);
     floo_mon_report();
