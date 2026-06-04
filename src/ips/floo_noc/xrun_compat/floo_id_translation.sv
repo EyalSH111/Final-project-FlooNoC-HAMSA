@@ -34,43 +34,9 @@ module floo_id_translation #(
   output mask_sel_t   mask_addr_y_o
 );
 
-
-  import floo_axi_mesh_noc_pkg::*;
-
+  // HAMSA stage-1 uses XY routing (UseIdTable=0). Table-based SAM needs floo_axi_mesh_noc_pkg.
   if (RouteCfg.UseIdTable) begin : gen_addr_decoder
-    logic dec_error;
-    sam_idx_t idx_out;
-    mask_sel_t x_mask_sel, y_mask_sel;
-    addr_t x_addr_mask, y_addr_mask;
-
-    addr_decode #(
-      .NoRules    ( SamNumRules ),
-      .addr_t     ( addr_t               ),
-      .rule_t     ( addr_rule_t          ),
-      .idx_t      ( sam_idx_t            )
-    ) i_addr_dst_decode (
-      .addr_i,
-      .addr_map_i       ( floo_axi_mesh_noc_pkg::Sam ),
-      .idx_o            ( idx_out     ),
-      .dec_valid_o      (             ),
-      .dec_error_o      ( dec_error   ),
-      .en_default_idx_i ( 1'b0        ),
-      .default_idx_i    ( '0          )
-    );
-
-    `ASSERT(DecodeError, !(dec_error && valid_i), clk_i, !rst_ni,
-        $sformatf("Error decoding address 0x%0x.", addr_i));
-
-    if (RouteCfg.EnMultiCast) begin: gen_mcast_id_mask
-      assign mask_addr_x_o = idx_out.mask_x;
-      assign mask_addr_y_o = idx_out.mask_y;
-      assign id_o = idx_out.id;
-    end else begin: gen_no_mcast
-      // If no multicast, simply forward the decoder id to the output
-      assign mask_addr_x_o = '0;
-      assign mask_addr_y_o = '0;
-      assign id_o = idx_out;
-    end
+    initial $fatal(1, "floo_id_translation: UseIdTable requires floo_axi_mesh_noc_pkg (not in stage-1 PoC)");
   end else if (RouteCfg.RouteAlgo == floo_pkg::XYRouting) begin : gen_xy_offset
     assign id_o.port_id = '0; // Not supported at the moment
     assign id_o.x = addr_i[RouteCfg.XYAddrOffsetX +: $bits(id_o.x)];

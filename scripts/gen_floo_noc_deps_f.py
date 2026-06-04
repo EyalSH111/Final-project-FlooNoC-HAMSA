@@ -6,6 +6,17 @@ ROOT = Path(__file__).resolve().parents[1] / "src" / "ips" / "floo_noc"
 OUT = ROOT / "floo_noc_deps.f"
 
 # TB / verification / XRUN-problematic (see gen_floo_noc_irun_f.py)
+# Already in HAMSA / riscv-dbg file lists — compiling twice causes duplicate-module errors.
+HAMSA_DUPLICATE_BASENAMES = frozenset(
+    {
+        "cdc_2phase.sv",
+        "fifo_v2.sv",
+        "fifo_v3.sv",
+        "rr_arb_tree.sv",
+        "id_queue.sv",
+    }
+)
+
 SKIP = frozenset(
     {
         "axi_test.sv",
@@ -40,7 +51,7 @@ def main() -> None:
         "+incdir+$PULP_ENV/src/ips/floo_noc/deps/common_cells\n",
     ]
     for sv in sorted((ROOT / "deps").rglob("*.sv")):
-        if sv.name in SKIP:
+        if sv.name in SKIP or sv.name in HAMSA_DUPLICATE_BASENAMES:
             continue
         rel = sv.relative_to(ROOT).as_posix()
         lines.append(f"$PULP_ENV/src/ips/floo_noc/{rel}\n")

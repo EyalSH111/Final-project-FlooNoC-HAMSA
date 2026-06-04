@@ -91,7 +91,6 @@ $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/boxcar.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/cb_filter.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/cb_filter_pkg.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/cc_onehot.sv
-$PULP_ENV/src/ips/floo_noc/deps/common_cells/src/cdc_2phase.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/cdc_2phase_clearable.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/cdc_4phase.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/cdc_fifo_2phase.sv
@@ -109,7 +108,6 @@ $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/deprecated/clk_div.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/deprecated/clock_divider.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/deprecated/clock_divider_counter.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/deprecated/fifo_v1.sv
-$PULP_ENV/src/ips/floo_noc/deps/common_cells/src/deprecated/fifo_v2.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/deprecated/find_first_one.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/deprecated/generic_LFSR_8bit.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/deprecated/generic_fifo.sv
@@ -129,9 +127,7 @@ $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/edge_propagator_rx.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/edge_propagator_tx.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/exp_backoff.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/fall_through_register.sv
-$PULP_ENV/src/ips/floo_noc/deps/common_cells/src/fifo_v3.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/gray_to_binary.sv
-$PULP_ENV/src/ips/floo_noc/deps/common_cells/src/id_queue.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/isochronous_4phase_handshake.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/isochronous_spill_register.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/lfsr.sv
@@ -146,7 +142,6 @@ $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/onehot_to_bin.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/passthrough_stream_fifo.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/plru_tree.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/read.sv
-$PULP_ENV/src/ips/floo_noc/deps/common_cells/src/rr_arb_tree.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/rstgen.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/rstgen_bypass.sv
 $PULP_ENV/src/ips/floo_noc/deps/common_cells/src/serial_deglitch.sv
