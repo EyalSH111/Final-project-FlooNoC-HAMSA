@@ -474,8 +474,8 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
    floo_req_t chimney_floo_req_o, chimney_floo_req_i;
    floo_rsp_t chimney_floo_rsp_o, chimney_floo_rsp_i;
 
-   floo_req_t [NumRoutes-1:0] router_req_in, router_req_out;
-   floo_rsp_t [NumRoutes-1:0] router_rsp_in, router_rsp_out;
+   floo_req_t router_req_in [NumRoutes-1:0], router_req_out [NumRoutes-1:0];
+   floo_rsp_t router_rsp_in [NumRoutes-1:0], router_rsp_out [NumRoutes-1:0];
 
 `ifndef FLOO_CHIMNEY_DISABLED
    hamsa_floo_xtrn_glue #(
