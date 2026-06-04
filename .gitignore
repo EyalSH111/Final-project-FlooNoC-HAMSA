@@ -1,4 +1,6 @@
-*tmp*
+*.tmp
+*~
+.#*
 
 # Simulation run directories (repo root only — not src/.../apps/helloworld)
 /helloworld/
