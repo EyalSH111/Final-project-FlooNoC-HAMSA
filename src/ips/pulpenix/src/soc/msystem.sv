@@ -191,7 +191,18 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
    logic                          fetch_enable_int ;
    logic                          core_busy_int    ;
    logic                          clk_gate_core_int;
+   logic                          fetch_enable_core;
+   logic                          clk_gate_core_core;
    logic [31:0]                   irq_to_core_int  ;
+
+`ifdef RTL_SIM
+   // Stage-1 sim: bypass sleep-unit fetch/clock gates so helloworld reaches UART.
+   assign fetch_enable_core  = enable_core;
+   assign clk_gate_core_core = 1'b1;
+`else
+   assign fetch_enable_core  = fetch_enable_int & enable_core;
+   assign clk_gate_core_core = clk_gate_core_int;
+`endif
 
    logic [31:0]                   boot_addr_int    ;
 
@@ -246,10 +257,10 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
                                    .ndmreset           ( ndmreset                            ),
 
                                    .testmode_i         ( pad_testmode_i                      ),
-                                   .fetch_enable_i     ( fetch_enable_int & enable_core ),
+                                   .fetch_enable_i     ( fetch_enable_core                   ),
                                    .irq_i              ( irq_to_core_int                     ),
                                    .core_busy_o        ( core_busy_int                       ),
-                                   .clock_gating_i     ( clk_gate_core_int ),
+                                   .clock_gating_i     ( clk_gate_core_core                  ),
                                    .boot_addr_i        ( boot_addr_int                       ),
 
                                    .core_master        ( masters[0]                          ),
@@ -727,7 +738,7 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
      end
    end
 
-   initial $display("[FLOO_BUILD] msystem stage1 reg-eject-loopback + RTL_SIM mgr aw/w/b shim + xtrn slv B/R");
+   initial $display("[FLOO_BUILD] msystem stage1 reg-eject-loopback + RTL_SIM mgr aw/w/b shim + xtrn slv B/R + core fetch/clk bypass");
 `else
    assign chimney_mgr_rsp = chimney_mgr_rsp_int;
 `endif
