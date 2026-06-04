@@ -9,8 +9,10 @@
 -f $PULP_ENV/src/ips/floo_noc/floo_noc_deps.f
 
 $PULP_ENV/src/ips/floo_noc/hw/floo_pkg.sv
-// XRUN 23.x: id_queue uses parameter type (not localparam type in deps/)
+// XRUN 23.x compat cells (single files — not under deps/common_cells/src)
 $PULP_ENV/src/ips/floo_noc/xrun_compat/id_queue.sv
+$PULP_ENV/src/ips/floo_noc/xrun_compat/spill_register_flushable.sv
+$PULP_ENV/src/ips/floo_noc/xrun_compat/stream_fifo_optimal_wrap.sv
 $PULP_ENV/src/ips/floo_noc/hw/floo_cut.sv
 $PULP_ENV/src/ips/floo_noc/hw/floo_fifo.sv
 $PULP_ENV/src/ips/floo_noc/hw/floo_cdc.sv

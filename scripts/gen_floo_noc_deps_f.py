@@ -24,10 +24,11 @@ DEPS_SOURCES = (
     "src/ips/common_cells/src/gray_to_binary.sv",
     "src/ips/common_cells/src/addr_decode.sv",
     "src/ips/common_cells/src/lzc.sv",
-    "src/ips/common_cells/src/spill_register_flushable.sv",
+    # HAMSA tree has spill_register.sv only; flushable lives under floo_noc/xrun_compat (solo file)
+    "src/ips/floo_noc/xrun_compat/spill_register_flushable.sv",
     "src/ips/common_cells/src/spill_register.sv",
     "src/ips/common_cells/src/stream_fifo.sv",
-    "src/ips/common_cells/src/stream_fifo_optimal_wrap.sv",
+    "src/ips/floo_noc/xrun_compat/stream_fifo_optimal_wrap.sv",
     "src/ips/common_cells/src/stream_register.sv",
     "src/ips/common_cells/src/stream_arbiter_flushable.sv",
     "src/ips/common_cells/src/stream_arbiter.sv",
