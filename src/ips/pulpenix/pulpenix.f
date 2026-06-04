@@ -34,7 +34,7 @@
 -f $PULP_ENV/src/ips/crg_legacy/design/cbus2axi/work/d_file
 
 //FILES
-$PULP_ENV/src/ips/pulpenix/src/soc/floo_hamsa_pkg.sv
+// floo_hamsa_pkg.sv: compiled from fpgnix_tb.f (after floo_noc.f) for XRUN package order
 $PULP_ENV/src/ips/pulpenix/src/soc/msystem.sv
 $PULP_ENV/src/ips/pulpenix/src/soc/includes/remote_access_intrfc.sv
 $PULP_ENV/src/ips/pulpenix/src/sp_ram_wrap.sv

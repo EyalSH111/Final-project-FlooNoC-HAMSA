@@ -1,5 +1,6 @@
+// This module wraps msystem mainly to avoid systemverilog interfaces at FPGA flow VQM level.
 
-// This module wraps msystem mainly to avoid systemverilog interfaces at FPGA flow VQM level. 
+import floo_hamsa_pkg::*;
 
 module vqm_msystem_wrap  (
 
@@ -48,18 +49,18 @@ module vqm_msystem_wrap  (
    output [31:0]     xbox_dmem_wdata,
    output [3:0]      xbox_dmem_wbe,
 
-   output logic [floo_hamsa_pkg::FlooReqBits-1:0] floo_req_o,
-   output logic [floo_hamsa_pkg::FlooRspBits-1:0] floo_rsp_o,
-   input  logic [floo_hamsa_pkg::FlooReqBits-1:0] floo_req_i,
-   input  logic [floo_hamsa_pkg::FlooRspBits-1:0] floo_rsp_i
+   output logic [FlooReqBits-1:0] floo_req_o,
+   output logic [FlooRspBits-1:0] floo_rsp_o,
+   input  logic [FlooReqBits-1:0] floo_req_i,
+   input  logic [FlooRspBits-1:0] floo_rsp_i
 );
 
 APB_BUS     s_gpp_master_bus();
 
-floo_hamsa_pkg::floo_req_t floo_req_o_s;
-floo_hamsa_pkg::floo_rsp_t floo_rsp_o_s;
-floo_hamsa_pkg::floo_req_t floo_req_i_s;
-floo_hamsa_pkg::floo_rsp_t floo_rsp_i_s;
+floo_req_t floo_req_o_s;
+floo_rsp_t floo_rsp_o_s;
+floo_req_t floo_req_i_s;
+floo_rsp_t floo_rsp_i_s;
 
 assign floo_req_o = floo_req_o_s;
 assign floo_rsp_o = floo_rsp_o_s;

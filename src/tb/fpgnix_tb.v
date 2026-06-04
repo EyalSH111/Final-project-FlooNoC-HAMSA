@@ -1,5 +1,7 @@
 
 `timescale 1ps/1ps
+import floo_hamsa_pkg::*;
+
 module fpgnix_tb();
 
 reg clk_ref;
@@ -271,8 +273,8 @@ SimJTAG #(
 wire floo_tb_clk;
 assign floo_tb_clk = fpgnix.vqm_msystem_wrap.msystem.clk_sys;
 
-reg [floo_hamsa_pkg::FlooReqBits-1:0] floo_req_i_lb;
-reg [floo_hamsa_pkg::FlooRspBits-1:0] floo_rsp_i_lb;
+reg [FlooReqBits-1:0] floo_req_i_lb;
+reg [FlooRspBits-1:0] floo_rsp_i_lb;
 
 always @(posedge floo_tb_clk or negedge rst_n) begin
     if (!rst_n) begin

@@ -1,3 +1,5 @@
+import floo_hamsa_pkg::*;
+
 module fpgnix (
     input                 sys_rst,
     input                 altera_clk25mhz,
@@ -158,10 +160,10 @@ logic                          xbox_dmem_wvalid;
 logic [31:0]                   xbox_dmem_wdata;
 logic [3:0]                    xbox_dmem_wbe;
 
-logic [floo_hamsa_pkg::FlooReqBits-1:0] floo_req_o;
-logic [floo_hamsa_pkg::FlooRspBits-1:0] floo_rsp_o;
-logic [floo_hamsa_pkg::FlooReqBits-1:0] floo_req_i;
-logic [floo_hamsa_pkg::FlooRspBits-1:0] floo_rsp_i;
+logic [FlooReqBits-1:0] floo_req_o;
+logic [FlooRspBits-1:0] floo_rsp_o;
+logic [FlooReqBits-1:0] floo_req_i;
+logic [FlooRspBits-1:0] floo_rsp_i;
 
 vqm_msystem_wrap vqm_msystem_wrap (
 
