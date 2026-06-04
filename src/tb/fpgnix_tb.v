@@ -387,10 +387,10 @@ always_ff @(posedge floo_tb_clk or negedge floo_rstn) begin : floo_axi_stim
                 end else if (floo_stim_cycles >= floo_stim_max_cycles) begin
                     $display("[FLOO_STIM] TIMEOUT waiting for aw_ready (rstn_sys=%b ndmreset=%b)",
                              floo_rstn, fpgnix.vqm_msystem_wrap.ndmreset);
-                    $display("[FLOO_STIM] dbg mgr aw_valid=%b aw_ready=%b chimney_rst=%b",
+                    $display("[FLOO_STIM] dbg mgr aw_valid=%b aw_ready=%b rstn_sys=%b",
                              fpgnix.vqm_msystem_wrap.msystem.chimney_mgr_req.aw_valid,
                              fpgnix.vqm_msystem_wrap.msystem.chimney_mgr_rsp.aw_ready,
-                             fpgnix.vqm_msystem_wrap.msystem.u_hamsa_chimney.rst_ni);
+                             fpgnix.vqm_msystem_wrap.rstn_sys);
                     floo_stim_state <= FLOO_ST_DONE;
                 end else
                     floo_stim_cycles <= floo_stim_cycles + 1;
@@ -440,7 +440,7 @@ task floo_mon_report;
             floo_mon_reported = 1'b1;
             $display("[FLOO_MON] SUMMARY: cumulative flits=%0d", floo_flit_count);
             if (floo_flit_count == 0)
-                $display("[FLOO_MON] FAIL: zero flits observed on u_hamsa_chimney.flit_req_out_o");
+                $display("[FLOO_MON] FAIL: zero flits on fpgnix.floo_req_o (north port)");
             else begin
                 $display("[FLOO_MON] PASS: non-zero flit activity through FlooNoC chimney");
                 $display("[FLOO_TB] UART check: grep -E \"Hey|FINISH\" helloworld/xrun.log after sim ends");
@@ -449,12 +449,13 @@ task floo_mon_report;
     end
 endtask
 
+floo_req_t floo_north_req_mon;
+assign floo_north_req_mon = fpgnix.floo_req_o;
+
 always @(posedge floo_tb_clk) begin
-    if (floo_rstn &&
-        (fpgnix.vqm_msystem_wrap.msystem.u_hamsa_chimney.flit_req_out_o.valid ||
-         fpgnix.vqm_msystem_wrap.msystem.u_hamsa_chimney.u_chimney.floo_req_o.valid)) begin
+    if (floo_rstn && floo_north_req_mon.valid) begin
         floo_flit_count <= floo_flit_count + 1;
-        $display("[FLOO_MON] time=%0t chimney req valid flit_count=%0d",
+        $display("[FLOO_MON] time=%0t north floo_req_o.valid flit_count=%0d",
                  $time, floo_flit_count + 1);
     end
 end

@@ -19,8 +19,8 @@ if ! git merge-base --is-ancestor 7ba341c HEAD 2>/dev/null; then
   exit 1
 fi
 
-if ! grep -q 'xtrn slv B/R' src/ips/pulpenix/src/soc/msystem.sv; then
-  echo "ERROR: RTL missing ffa374a fixes (need 'xtrn slv B/R' in msystem.sv)."
+if ! grep -q '\[FLOO_BUILD\].*RTL_SIM' src/ips/pulpenix/src/soc/msystem.sv; then
+  echo "ERROR: RTL missing stage-1 Floo RTL_SIM markers in msystem.sv (git pull?)."
   exit 1
 fi
 
@@ -41,8 +41,8 @@ fi
 echo "=== log checks: $LOG ==="
 grep -E 'FLOO_BUILD|FLOO_BOOT|FLOO_STIM|FLOO_MON|Hey|FINISH' "$LOG" || true
 
-if ! grep -q 'xtrn slv B/R' "$LOG"; then
-  echo "ERROR: xrun.log missing new FLOO_BUILD (still old elaboration)."
+if ! grep -q '\[FLOO_BUILD\]' "$LOG"; then
+  echo "ERROR: xrun.log missing [FLOO_BUILD] (stale snapshot or elaboration failed)."
   exit 1
 fi
 
