@@ -527,6 +527,9 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
    floo_req_t chimney_floo_req_o, chimney_floo_req_i;
    floo_rsp_t chimney_floo_rsp_o, chimney_floo_rsp_i;
 
+   floo_req_t floo_north_req_in;
+   floo_rsp_t floo_north_rsp_in;
+
    floo_req_t router_req_in [NumRoutes-1:0], router_req_out [NumRoutes-1:0];
    floo_rsp_t router_rsp_in [NumRoutes-1:0], router_rsp_out [NumRoutes-1:0];
 
@@ -585,6 +588,7 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
      .NumOutputs   ( NumRoutes    ),
      .InFifoDepth  ( 2            ),
      .OutFifoDepth ( 2            ),
+     .NoLoopback   ( 1'b0         ), // eject<->eject for local (0,0) tile
      .id_t         ( id_t         ),
      .hdr_t        ( hdr_t        ),
      .floo_req_t   ( floo_req_t   ),
@@ -607,13 +611,17 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
    localparam int unsigned PortWest  = 3;
    localparam int unsigned PortEject = 4;
 
-   assign router_req_in[PortNorth]  = floo_north_req_i;
+   assign floo_north_req_in.req   = floo_north_req_i.req;
+   assign floo_north_req_in.valid = floo_north_req_i.valid;
+   assign floo_north_req_in.ready = 1'b1;
+   assign floo_north_rsp_in.rsp   = floo_north_rsp_i.rsp;
+   assign floo_north_rsp_in.valid = floo_north_rsp_i.valid;
+   assign floo_north_rsp_in.ready = 1'b1;
+
+   assign router_req_in[PortNorth]  = floo_north_req_in;
    assign floo_north_req_o          = router_req_out[PortNorth];
    assign floo_north_rsp_o          = router_rsp_out[PortNorth];
-   assign router_rsp_in[PortNorth]  = floo_north_rsp_i;
-   // TB loopback does not drive link.ready; tie so router/North can accept return-path credits
-   assign floo_north_req_i.ready    = 1'b1;
-   assign floo_north_rsp_i.ready    = 1'b1;
+   assign router_rsp_in[PortNorth]  = floo_north_rsp_in;
 
    assign router_req_in[PortEast]  = '0;
    assign router_req_in[PortSouth] = '0;

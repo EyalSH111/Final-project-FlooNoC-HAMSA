@@ -26,6 +26,8 @@ module floo_axi_router #(
   /// Disable illegal connections in router
   /// (only applies for `RouteAlgo == XYRouting`)
   parameter bit          XYRouteOpt           = 1'b1,
+  /// Disable in==out loopback (must be 0 for single-tile eject-local traffic)
+  parameter bit          NoLoopback           = 1'b1,
   /// Node ID type
   parameter type id_t                         = logic,
   /// Header type
@@ -105,6 +107,7 @@ module floo_axi_router #(
     .OutFifoDepth     ( OutFifoDepth            ),
     .RouteAlgo        ( RouteAlgo               ),
     .XYRouteOpt       ( XYRouteOpt              ),
+    .NoLoopback       ( NoLoopback              ),
     .id_t             ( id_t                    ),
     .NumAddrRules     ( NumAddrRules            ),
     .addr_rule_t      ( addr_rule_t             )
@@ -132,6 +135,7 @@ module floo_axi_router #(
     .OutFifoDepth     ( OutFifoDepth            ),
     .RouteAlgo        ( RouteAlgo               ),
     .XYRouteOpt       ( XYRouteOpt              ),
+    .NoLoopback       ( NoLoopback              ),
     .flit_t           ( floo_rsp_generic_flit_t ),
     .id_t             ( id_t                    ),
     .NumAddrRules     ( NumAddrRules            ),
