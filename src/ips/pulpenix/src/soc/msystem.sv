@@ -511,7 +511,7 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
                         .NB_SLAVE       ( 6                    ),
                         .AXI_ADDR_WIDTH ( `AXI_ADDR_WIDTH      ),
                         .AXI_DATA_WIDTH ( `AXI_DATA_WIDTH      ),
-                        .AXI_ID_WIDTH   ( `AXI_ID_SLAVE_WIDTH  ),
+                        .AXI_ID_WIDTH   ( `AXI_ID_MASTER_WIDTH ),
                         .AXI_USER_WIDTH ( `AXI_USER_WIDTH      )
                         )
    axi_interconnect_i (
@@ -771,36 +771,14 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
 
    `AXI_ASSIGN_MASTER(slaves[4], xtrn_master_int)
    `AXI_ASSIGN_SLAVE(masters[4], xtrn_slave_int)
-   `AXI_DEGENERATE_MASTER(xtrn_master_int)
 
-   assign xtrn_slave_int.aw_ready = 1'b1;
-   assign xtrn_slave_int.ar_ready = 1'b1;
-   assign xtrn_slave_int.w_ready  = 1'b1;
-   assign xtrn_slave_int.b_valid  = 1'b0;
-   assign xtrn_slave_int.b_resp   = 2'b00;
-   assign xtrn_slave_int.b_id     = '0;
-   assign xtrn_slave_int.b_user   = '0;
-   assign xtrn_slave_int.r_valid  = 1'b0;
-   assign xtrn_slave_int.r_resp   = 2'b00;
-   assign xtrn_slave_int.r_data   = '0;
-   assign xtrn_slave_int.r_last   = 1'b1;
-   assign xtrn_slave_int.r_id     = '0;
-   assign xtrn_slave_int.r_user   = '0;
+   // Idle SoC-side responses (macro wires xtrn_* from slaves/masters — do not drive xtrn_* directly).
 
-   assign xtrn_master_int.aw_ready = 1'b1;
-   assign xtrn_master_int.ar_ready = 1'b1;
-   assign xtrn_master_int.w_ready  = 1'b1;
-   assign xtrn_master_int.b_valid  = 1'b0;
-   assign xtrn_master_int.b_resp   = 2'b00;
-   assign xtrn_master_int.b_id     = '0;
-   assign xtrn_master_int.b_user   = '0;
-   assign xtrn_master_int.r_valid  = 1'b0;
-   assign xtrn_master_int.r_resp   = 2'b00;
-   assign xtrn_master_int.r_data   = '0;
-   assign xtrn_master_int.r_last   = 1'b1;
-   assign xtrn_master_int.r_id     = '0;
-   assign xtrn_master_int.r_user   = '0;
-
+   assign xtrn_slave_int.aw_valid = 1'b0;
+   assign xtrn_slave_int.ar_valid = 1'b0;
+   assign xtrn_slave_int.w_valid  = 1'b0;
+   assign xtrn_slave_int.r_ready  = 1'b1;
+   assign xtrn_slave_int.b_ready  = 1'b1;
    initial $display("[FLOO_BUILD] msystem: FLOO_CHIMNEY_DISABLED — xtrn port 4 tied off");
 
 `endif
