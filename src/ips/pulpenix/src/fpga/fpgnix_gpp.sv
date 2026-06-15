@@ -187,7 +187,11 @@ assign gpp_fpgnix_ctl_reg_valid_pulse = host_regs_valid_pulse[0] ;
 always @(posedge clk or negedge sys_rst_n)
     if (!sys_rst_n) begin
 `ifdef RTL_SIM
+`ifdef FLOO_UART_BISECT_C
+        jtag_sel <= 1'b1; // bisect: match vanilla ddp23_pnx RTL_SIM default
+`else
         jtag_sel <= 1'b0; // sim: UART on pads (jtag_sel=1 + TB TRSTn=0 holds debug)
+`endif
 `else
         jtag_sel <= 1'b1; // 0 - uart ; 1 - jtag
 `endif
