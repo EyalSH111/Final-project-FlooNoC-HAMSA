@@ -312,6 +312,85 @@ initial begin : floo_periph_clk_bypass
     force fpgnix.vqm_msystem_wrap.msystem.peripherals_i.peripheral_clock_gate_ctrl = 32'hFFFF_FFFF;
     $display("[FLOO_TB] RTL_SIM: forced peripheral_clock_gate_ctrl=all1 (UART/APB clocks)");
 end
+
+// Pinpoint CPU vs AXI vs APB for uart_set_cfg() stall @ CGREG (0x1A107004).
+initial $display("[UART_DBG] monitor enabled (RTL_SIM)");
+
+logic        uart_dbg_ar_pending;
+logic [31:0] uart_dbg_ar_addr;
+integer      uart_dbg_apb_soc_ctrl_hits;
+
+function automatic bit uart_dbg_is_periph_addr(input logic [31:0] addr);
+    return (addr >= 32'h1A10_0000) && (addr < 32'h1A50_0000);
+endfunction
+
+initial uart_dbg_apb_soc_ctrl_hits = 0;
+
+always_ff @(posedge floo_tb_clk or negedge floo_rstn) begin
+    if (!floo_rstn) begin
+        uart_dbg_ar_pending <= 1'b0;
+        uart_dbg_ar_addr    <= '0;
+    end else begin
+        if (fpgnix.vqm_msystem_wrap.msystem.masters[0].ar_valid &&
+            fpgnix.vqm_msystem_wrap.msystem.masters[0].ar_ready &&
+            uart_dbg_is_periph_addr(fpgnix.vqm_msystem_wrap.msystem.masters[0].ar_addr)) begin
+            uart_dbg_ar_pending <= 1'b1;
+            uart_dbg_ar_addr    <= fpgnix.vqm_msystem_wrap.msystem.masters[0].ar_addr;
+            $display("[UART_DBG] core AR accepted addr=0x%08x @ %0t",
+                     fpgnix.vqm_msystem_wrap.msystem.masters[0].ar_addr, $time);
+        end
+        if (uart_dbg_ar_pending &&
+            fpgnix.vqm_msystem_wrap.msystem.masters[0].r_valid &&
+            fpgnix.vqm_msystem_wrap.msystem.masters[0].r_ready) begin
+            uart_dbg_ar_pending <= 1'b0;
+            $display("[UART_DBG] core R done data=0x%016x (pending addr was 0x%08x) @ %0t",
+                     fpgnix.vqm_msystem_wrap.msystem.masters[0].r_data, uart_dbg_ar_addr, $time);
+        end
+    end
+end
+
+always_ff @(posedge floo_tb_clk) begin
+    if (fpgnix.vqm_msystem_wrap.msystem.peripherals_i.s_soc_ctrl_bus.psel &&
+        fpgnix.vqm_msystem_wrap.msystem.peripherals_i.s_soc_ctrl_bus.penable &&
+        uart_dbg_apb_soc_ctrl_hits < 8) begin
+        uart_dbg_apb_soc_ctrl_hits++;
+        $display("[UART_DBG] APB soc_ctrl access paddr=0x%03x pwrite=%b prdata=0x%08x @ %0t",
+                 fpgnix.vqm_msystem_wrap.msystem.peripherals_i.s_soc_ctrl_bus.paddr[11:0],
+                 fpgnix.vqm_msystem_wrap.msystem.peripherals_i.s_soc_ctrl_bus.pwrite,
+                 fpgnix.vqm_msystem_wrap.msystem.peripherals_i.s_soc_ctrl_bus.prdata,
+                 $time);
+    end
+end
+
+initial begin : uart_dbg_stall_report
+    #500_000; // 500 us — core stalls ~7 us (trace cycle 68)
+    $display("[UART_DBG] --- snapshot @ 500us ---");
+    $display("[UART_DBG] core masters[0] ar_valid=%b ar_ready=%b ar_addr=0x%08x",
+             fpgnix.vqm_msystem_wrap.msystem.masters[0].ar_valid,
+             fpgnix.vqm_msystem_wrap.msystem.masters[0].ar_ready,
+             fpgnix.vqm_msystem_wrap.msystem.masters[0].ar_addr);
+    $display("[UART_DBG] core masters[0] r_valid=%b r_ready=%b ar_pending=%b pending_addr=0x%08x",
+             fpgnix.vqm_msystem_wrap.msystem.masters[0].r_valid,
+             fpgnix.vqm_msystem_wrap.msystem.masters[0].r_ready,
+             uart_dbg_ar_pending, uart_dbg_ar_addr);
+    $display("[UART_DBG] periph slaves[2] ar_valid=%b ar_ready=%b r_valid=%b",
+             fpgnix.vqm_msystem_wrap.msystem.slaves[2].ar_valid,
+             fpgnix.vqm_msystem_wrap.msystem.slaves[2].ar_ready,
+             fpgnix.vqm_msystem_wrap.msystem.slaves[2].r_valid);
+    $display("[UART_DBG] soc_ctrl psel=%b penable=%b pready=%b apb_hits=%0d",
+             fpgnix.vqm_msystem_wrap.msystem.peripherals_i.s_soc_ctrl_bus.psel,
+             fpgnix.vqm_msystem_wrap.msystem.peripherals_i.s_soc_ctrl_bus.penable,
+             fpgnix.vqm_msystem_wrap.msystem.peripherals_i.s_soc_ctrl_bus.pready,
+             uart_dbg_apb_soc_ctrl_hits);
+    if (uart_dbg_ar_pending)
+        $display("[UART_DBG] STALL: core LSU waiting for AXI read (likely CGREG) - not an APB PREADY issue");
+    else if (uart_dbg_apb_soc_ctrl_hits == 0 &&
+             (fpgnix.vqm_msystem_wrap.msystem.masters[0].ar_valid ||
+              fpgnix.vqm_msystem_wrap.msystem.masters[0].aw_valid))
+        $display("[UART_DBG] STALL: core issued AXI to periph but APB soc_ctrl never selected — check axi_node decode / axi2apb");
+    else if (uart_dbg_apb_soc_ctrl_hits > 0 && uart_dbg_ar_pending)
+        $display("[UART_DBG] STALL: APB saw soc_ctrl but AXI R not returned — check axi2apb read path");
+end
 `endif
 
 integer floo_uart_tx_edges;
