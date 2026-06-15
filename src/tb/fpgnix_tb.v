@@ -269,41 +269,12 @@ SimJTAG #(
 
 // ---------------------------------------------------------------------------
 // Stage-1 FlooNoC: North-port loopback + chimney activity monitor
+// (skipped when FLOO_UART_BISECT_C — do not drive masters[4] from TB)
 // ---------------------------------------------------------------------------
 wire floo_tb_clk;
 wire floo_rstn;
 assign floo_tb_clk = fpgnix.vqm_msystem_wrap.msystem.clk_sys;
 assign floo_rstn   = fpgnix.vqm_msystem_wrap.rstn_sys;
-
-reg [FlooReqBits-1:0] floo_req_i_lb;
-reg [FlooRspBits-1:0] floo_rsp_i_lb;
-
-always @(posedge floo_tb_clk or negedge floo_rstn) begin
-    if (!floo_rstn) begin
-        floo_req_i_lb <= '0;
-        floo_rsp_i_lb <= '0;
-    end else begin
-        floo_req_i_lb <= fpgnix.floo_req_o;
-        floo_rsp_i_lb <= fpgnix.floo_rsp_o;
-    end
-end
-
-assign fpgnix.floo_req_i = floo_req_i_lb;
-assign fpgnix.floo_rsp_i = floo_rsp_i_lb;
-
-// Stage-1: drive one AXI write on masters[4] (sync to clk_sys / rstn_sys).
-typedef enum logic [2:0] {
-    FLOO_ST_IDLE = 3'd0,
-    FLOO_ST_AW   = 3'd1,
-    FLOO_ST_W    = 3'd2,
-    FLOO_ST_B    = 3'd3,
-    FLOO_ST_DONE = 3'd4
-} floo_stim_e;
-
-floo_stim_e        floo_stim_state;
-integer            floo_stim_cycles;
-integer            floo_stim_start_delay;
-integer            floo_stim_max_cycles;
 
 `ifdef RTL_SIM
 `ifndef FLOO_UART_BISECT_C
@@ -395,7 +366,7 @@ initial begin : uart_dbg_stall_report
     else if (uart_dbg_apb_soc_ctrl_hits > 0 && uart_dbg_ar_pending)
         $display("[UART_DBG] STALL: APB saw soc_ctrl but AXI R not returned - check axi2apb read path");
 end
-`endif
+`endif // RTL_SIM
 
 integer floo_uart_tx_edges;
 initial floo_uart_tx_edges = 0;
@@ -413,6 +384,38 @@ initial begin : floo_boot_diag
     #10_000_000; // 20 ms total
     $display("[FLOO_UART] uart_tx_edges=%0d by 20ms (0 => core not driving UART)", floo_uart_tx_edges);
 end
+
+`ifndef FLOO_UART_BISECT_C
+
+reg [FlooReqBits-1:0] floo_req_i_lb;
+reg [FlooRspBits-1:0] floo_rsp_i_lb;
+
+always @(posedge floo_tb_clk or negedge floo_rstn) begin
+    if (!floo_rstn) begin
+        floo_req_i_lb <= '0;
+        floo_rsp_i_lb <= '0;
+    end else begin
+        floo_req_i_lb <= fpgnix.floo_req_o;
+        floo_rsp_i_lb <= fpgnix.floo_rsp_o;
+    end
+end
+
+assign fpgnix.floo_req_i = floo_req_i_lb;
+assign fpgnix.floo_rsp_i = floo_rsp_i_lb;
+
+// Stage-1: drive one AXI write on masters[4] (sync to clk_sys / rstn_sys).
+typedef enum logic [2:0] {
+    FLOO_ST_IDLE = 3'd0,
+    FLOO_ST_AW   = 3'd1,
+    FLOO_ST_W    = 3'd2,
+    FLOO_ST_B    = 3'd3,
+    FLOO_ST_DONE = 3'd4
+} floo_stim_e;
+
+floo_stim_e        floo_stim_state;
+integer            floo_stim_cycles;
+integer            floo_stim_start_delay;
+integer            floo_stim_max_cycles;
 
 initial begin
     floo_stim_start_delay = 500;
@@ -574,5 +577,23 @@ initial begin : floo_mon_watchdog
 end
 
 // XRUN: final blocks cannot call tasks (BADTFB); initial watchdog above is sufficient
+
+`else // FLOO_UART_BISECT_C
+
+assign fpgnix.floo_req_i = '0;
+assign fpgnix.floo_rsp_i = '0;
+
+initial begin : floo_sim_timeout_bisect
+    longint tout_ns;
+    int     tout_s;
+    tout_ns = 60_000_000_000;
+    if ($value$plusargs("FLOO_SIM_TIMEOUT_S=%d", tout_s))
+        tout_ns = tout_s * 1_000_000_000;
+    #(tout_ns);
+    $display("[FLOO_TB] FLOO_UART_BISECT_C: safety timeout %0d ns — $finish", tout_ns);
+    $finish(2);
+end
+
+`endif // FLOO_UART_BISECT_C
 
 endmodule
