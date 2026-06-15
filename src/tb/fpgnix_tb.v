@@ -306,12 +306,16 @@ integer            floo_stim_start_delay;
 integer            floo_stim_max_cycles;
 
 `ifdef RTL_SIM
+`ifndef FLOO_UART_BISECT_C
 // APB UART clock is gated until SW writes CGREG; testmode ungates all peripheral clocks.
 initial begin : floo_periph_clk_bypass
     wait (fpgnix.vqm_msystem_wrap.rstn_sys === 1'b1);
     force fpgnix.vqm_msystem_wrap.msystem.peripherals_i.peripheral_clock_gate_ctrl = 32'hFFFF_FFFF;
     $display("[FLOO_TB] RTL_SIM: forced peripheral_clock_gate_ctrl=all1 (UART/APB clocks)");
 end
+`else
+initial $display("[FLOO_TB] FLOO_UART_BISECT_C: no force on peripheral_clock_gate_ctrl, pad_testmode=0");
+`endif
 
 // Pinpoint CPU vs AXI vs APB for uart_set_cfg() stall @ CGREG (0x1A107004).
 initial $display("[UART_DBG] monitor enabled (RTL_SIM)");

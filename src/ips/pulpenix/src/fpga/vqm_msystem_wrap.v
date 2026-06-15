@@ -127,8 +127,12 @@ msystem msystem (
                  .data_ram_sel_i        ('h0),                  
                  .enable_core           (enable_core),
 `ifdef RTL_SIM
+`ifndef FLOO_UART_BISECT_C
                  // Un-gate APB peripheral clocks (incl. UART) before SW writes CGREG.
                  .pad_testmode_i        ('h1),
+`else
+                 .pad_testmode_i        ('h0),
+`endif
 `else
                  .pad_testmode_i        ('h0),
 `endif
