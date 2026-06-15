@@ -753,6 +753,56 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
    assign floo_north_req_o = '0;
    assign floo_north_rsp_o = '0;
 
+   // PoC removed chip-level xtrn AXI ports; idle port 4 on axi_node (vanilla used
+   // undriven pnx_axi_* buses in vqm_msystem_wrap — explicit tie-off avoids X/Z).
+   AXI_BUS #(
+     .AXI_ADDR_WIDTH ( `AXI_ADDR_WIDTH      ),
+     .AXI_DATA_WIDTH ( `AXI_DATA_WIDTH      ),
+     .AXI_ID_WIDTH   ( `AXI_ID_MASTER_WIDTH ),
+     .AXI_USER_WIDTH ( `AXI_USER_WIDTH      )
+   ) xtrn_master_int ();
+
+   AXI_BUS #(
+     .AXI_ADDR_WIDTH ( `AXI_ADDR_WIDTH     ),
+     .AXI_DATA_WIDTH ( `AXI_DATA_WIDTH     ),
+     .AXI_ID_WIDTH   ( `AXI_ID_SLAVE_WIDTH ),
+     .AXI_USER_WIDTH ( `AXI_USER_WIDTH     )
+   ) xtrn_slave_int ();
+
+   `AXI_ASSIGN_MASTER(slaves[4], xtrn_master_int)
+   `AXI_ASSIGN_SLAVE(masters[4], xtrn_slave_int)
+   `AXI_DEGENERATE_MASTER(xtrn_master_int)
+
+   assign xtrn_slave_int.aw_ready = 1'b1;
+   assign xtrn_slave_int.ar_ready = 1'b1;
+   assign xtrn_slave_int.w_ready  = 1'b1;
+   assign xtrn_slave_int.b_valid  = 1'b0;
+   assign xtrn_slave_int.b_resp   = 2'b00;
+   assign xtrn_slave_int.b_id     = '0;
+   assign xtrn_slave_int.b_user   = '0;
+   assign xtrn_slave_int.r_valid  = 1'b0;
+   assign xtrn_slave_int.r_resp   = 2'b00;
+   assign xtrn_slave_int.r_data   = '0;
+   assign xtrn_slave_int.r_last   = 1'b1;
+   assign xtrn_slave_int.r_id     = '0;
+   assign xtrn_slave_int.r_user   = '0;
+
+   assign xtrn_master_int.aw_ready = 1'b1;
+   assign xtrn_master_int.ar_ready = 1'b1;
+   assign xtrn_master_int.w_ready  = 1'b1;
+   assign xtrn_master_int.b_valid  = 1'b0;
+   assign xtrn_master_int.b_resp   = 2'b00;
+   assign xtrn_master_int.b_id     = '0;
+   assign xtrn_master_int.b_user   = '0;
+   assign xtrn_master_int.r_valid  = 1'b0;
+   assign xtrn_master_int.r_resp   = 2'b00;
+   assign xtrn_master_int.r_data   = '0;
+   assign xtrn_master_int.r_last   = 1'b1;
+   assign xtrn_master_int.r_id     = '0;
+   assign xtrn_master_int.r_user   = '0;
+
+   initial $display("[FLOO_BUILD] msystem: FLOO_CHIMNEY_DISABLED — xtrn port 4 tied off");
+
 `endif
 
 

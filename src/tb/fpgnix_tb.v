@@ -294,12 +294,18 @@ initial $display("[UART_DBG] monitor enabled (RTL_SIM)");
 logic        uart_dbg_ar_pending;
 logic [31:0] uart_dbg_ar_addr;
 integer      uart_dbg_apb_soc_ctrl_hits;
+integer      uart_dbg_periph_r_hits;
+integer      uart_dbg_axi2apb_r_hits;
 
 function automatic bit uart_dbg_is_periph_addr(input logic [31:0] addr);
     return (addr >= 32'h1A10_0000) && (addr < 32'h1A50_0000);
 endfunction
 
-initial uart_dbg_apb_soc_ctrl_hits = 0;
+initial begin
+    uart_dbg_apb_soc_ctrl_hits = 0;
+    uart_dbg_periph_r_hits     = 0;
+    uart_dbg_axi2apb_r_hits    = 0;
+end
 
 always @(posedge floo_tb_clk) begin
     if (fpgnix.vqm_msystem_wrap.msystem.peripherals_i.s_soc_ctrl_bus.psel &&
@@ -311,6 +317,22 @@ always @(posedge floo_tb_clk) begin
                  fpgnix.vqm_msystem_wrap.msystem.peripherals_i.s_soc_ctrl_bus.prdata,
                  $time);
         uart_dbg_apb_soc_ctrl_hits = uart_dbg_apb_soc_ctrl_hits + 1;
+    end
+    if (fpgnix.vqm_msystem_wrap.msystem.slaves[2].r_valid &&
+        uart_dbg_periph_r_hits < 8) begin
+        $display("[UART_DBG] periph slaves[2] r_valid=1 r_ready=%b r_data=0x%08x r_id=0x%02x @ %0t",
+                 fpgnix.vqm_msystem_wrap.msystem.slaves[2].r_ready,
+                 fpgnix.vqm_msystem_wrap.msystem.slaves[2].r_data,
+                 fpgnix.vqm_msystem_wrap.msystem.slaves[2].r_id,
+                 $time);
+        uart_dbg_periph_r_hits = uart_dbg_periph_r_hits + 1;
+    end
+    if (fpgnix.vqm_msystem_wrap.msystem.peripherals_i.axi2apb_i.axi2apb_i.RVALID_o &&
+        uart_dbg_axi2apb_r_hits < 8) begin
+        $display("[UART_DBG] axi2apb RVALID_o=1 RREADY_i=%b @ %0t",
+                 fpgnix.vqm_msystem_wrap.msystem.peripherals_i.axi2apb_i.axi2apb_i.RREADY_i,
+                 $time);
+        uart_dbg_axi2apb_r_hits = uart_dbg_axi2apb_r_hits + 1;
     end
 end
 
@@ -363,8 +385,14 @@ initial begin : uart_dbg_stall_report
              (fpgnix.vqm_msystem_wrap.msystem.masters[0].ar_valid ||
               fpgnix.vqm_msystem_wrap.msystem.masters[0].aw_valid))
         $display("[UART_DBG] STALL: core issued AXI to periph but APB soc_ctrl never selected - check axi_node decode / axi2apb");
-    else if (uart_dbg_apb_soc_ctrl_hits > 0 && uart_dbg_ar_pending)
-        $display("[UART_DBG] STALL: APB saw soc_ctrl but AXI R not returned - check axi2apb read path");
+    else if (uart_dbg_apb_soc_ctrl_hits > 0 && uart_dbg_ar_pending) begin
+        if (uart_dbg_axi2apb_r_hits > 0 && uart_dbg_periph_r_hits == 0)
+            $display("[UART_DBG] STALL: axi2apb RVALID but not slaves[2].r_valid — axi_node R route");
+        else if (uart_dbg_periph_r_hits > 0)
+            $display("[UART_DBG] STALL: slaves[2].r_valid seen but masters[0] R missing — core path / ID");
+        else
+            $display("[UART_DBG] STALL: APB saw soc_ctrl but no axi2apb RVALID — axi2apb FSM / AR to bridge");
+    end
 end
 `endif // RTL_SIM
 
