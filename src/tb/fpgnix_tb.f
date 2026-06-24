@@ -14,6 +14,7 @@
 $PULP_ENV/src/ips/floo_noc/xrun_compat/floo_hamsa_pkg/floo_hamsa_pkg.sv
 $PULP_ENV/src/ips/floo_noc/hamsa_floo_chimney_wrap.sv
 $PULP_ENV/src/ips/floo_noc/hamsa_floo_xtrn_glue.sv
+$PULP_ENV/src/ips/floo_noc/hamsa_floo_remote_mem_endpoint.sv
 -f $PULP_ENV/src/ips/pulpenix/fpgnix.f
 
 //FILES

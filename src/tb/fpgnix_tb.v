@@ -417,21 +417,21 @@ end
 
 `ifndef FLOO_UART_BISECT_C
 
-reg [FlooReqBits-1:0] floo_req_i_lb;
-reg [FlooRspBits-1:0] floo_rsp_i_lb;
+floo_req_t floo_remote_req_i;
+floo_rsp_t floo_remote_rsp_i;
 
-always @(posedge floo_tb_clk or negedge floo_rstn) begin
-    if (!floo_rstn) begin
-        floo_req_i_lb <= '0;
-        floo_rsp_i_lb <= '0;
-    end else begin
-        floo_req_i_lb <= fpgnix.floo_req_o;
-        floo_rsp_i_lb <= fpgnix.floo_rsp_o;
-    end
-end
+hamsa_floo_remote_mem_endpoint i_hamsa_floo_remote_mem_endpoint (
+    .clk_i         ( floo_tb_clk        ),
+    .rst_ni        ( floo_rstn          ),
+    .test_enable_i ( 1'b0               ),
+    .floo_req_i    ( fpgnix.floo_req_o  ),
+    .floo_rsp_i    ( fpgnix.floo_rsp_o  ),
+    .floo_req_o    ( floo_remote_req_i  ),
+    .floo_rsp_o    ( floo_remote_rsp_i  )
+);
 
-assign fpgnix.floo_req_i = floo_req_i_lb;
-assign fpgnix.floo_rsp_i = floo_rsp_i_lb;
+assign fpgnix.floo_req_i = floo_remote_req_i;
+assign fpgnix.floo_rsp_i = floo_remote_rsp_i;
 
 // Stage-1: drive one AXI write on masters[4] (sync to clk_sys / rstn_sys).
 typedef enum logic [2:0] {
@@ -471,7 +471,8 @@ always_ff @(posedge floo_tb_clk or negedge floo_rstn) begin : floo_axi_stim
                 fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready  <= 1'b0;
                 if (floo_stim_cycles == floo_stim_start_delay) begin
                     $display("[FLOO_STIM] driving AXI write on masters[4] (rstn_sys=1)");
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_addr   <= 32'h0000_0000;
+                    // XYAddrOffsetY=20 and tile0 is (0,0), so bit 20 routes to remote tile (0,1).
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_addr   <= 32'h0010_0000;
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_id     <= 2'b0;
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_len    <= 8'h0;
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_size   <= 3'b010;
@@ -544,9 +545,13 @@ always_ff @(posedge floo_tb_clk or negedge floo_rstn) begin : floo_axi_stim
 end
 
 integer floo_flit_count;
+integer floo_north_req_count;
+integer floo_north_rsp_count;
 reg     floo_mon_reported;
 initial begin
     floo_flit_count = 0;
+    floo_north_req_count = 0;
+    floo_north_rsp_count = 0;
     floo_mon_reported = 1'b0;
 end
 
@@ -555,25 +560,41 @@ task floo_mon_report;
         if (!floo_mon_reported) begin
             floo_mon_reported = 1'b1;
             $display("[FLOO_MON] SUMMARY: cumulative flits=%0d", floo_flit_count);
+            $display("[FLOO_2X2] SUMMARY: north_req=%0d north_rsp=%0d",
+                     floo_north_req_count, floo_north_rsp_count);
             if (floo_flit_count == 0)
                 $display("[FLOO_MON] FAIL: zero flits on msystem.chimney_floo_req_o");
             else begin
-                $display("[FLOO_MON] PASS: non-zero flit activity through FlooNoC chimney");
-                $display("[FLOO_TB] UART check: grep -E \"Hey|FINISH\" helloworld/xrun.log after sim ends");
+                $display("[FLOO_MON] PASS: non-zero tile0 chimney flit activity");
+                $display("[FLOO_TB] 2x2 check: grep -E \"FLOO_2X2|FLOO_STIM|FLOO_MON|Hey|FINISH\" helloworld/xrun.log");
             end
         end
     end
 endtask
 
-// Stage-1 loops chimney flits internally; north port (fpgnix.floo_req_o) may stay quiet.
+// Tile0 chimney request monitor. Remote endpoint logs prove the flits cross the top-level north link.
 floo_req_t floo_chimney_req_mon;
+floo_req_t floo_north_req_mon;
+floo_rsp_t floo_north_rsp_mon;
 assign floo_chimney_req_mon = fpgnix.vqm_msystem_wrap.msystem.chimney_floo_req_o;
+assign floo_north_req_mon = fpgnix.floo_req_o;
+assign floo_north_rsp_mon = fpgnix.floo_rsp_i;
 
 always @(posedge floo_tb_clk) begin
     if (floo_rstn && floo_chimney_req_mon.valid) begin
         floo_flit_count <= floo_flit_count + 1;
         $display("[FLOO_MON] time=%0t chimney_floo_req_o.valid flit_count=%0d",
                  $time, floo_flit_count + 1);
+    end
+    if (floo_rstn && floo_north_req_mon.valid && floo_north_req_mon.ready) begin
+        floo_north_req_count <= floo_north_req_count + 1;
+        $display("[FLOO_2X2] tile0 north req handshake count=%0d @ time %0t",
+                 floo_north_req_count + 1, $time);
+    end
+    if (floo_rstn && floo_north_rsp_mon.valid && floo_north_rsp_mon.ready) begin
+        floo_north_rsp_count <= floo_north_rsp_count + 1;
+        $display("[FLOO_2X2] tile0 north rsp handshake count=%0d @ time %0t",
+                 floo_north_rsp_count + 1, $time);
     end
 end
 

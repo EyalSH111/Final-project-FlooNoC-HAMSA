@@ -9,7 +9,7 @@ package floo_hamsa_pkg;
   import floo_pkg::*;
 
   localparam int unsigned NumX = 1;
-  localparam int unsigned NumY = 1;
+  localparam int unsigned NumY = 2;
   localparam int unsigned NumRoutes = 5;
 
   localparam axi_cfg_t AxiCfg = '{
@@ -66,7 +66,8 @@ package floo_hamsa_pkg;
   `FLOO_TYPEDEF_AXI_CHAN_ALL(axi, req, rsp, axi_in, AxiCfg, hdr_t)
   `FLOO_TYPEDEF_AXI_LINK_ALL(req, rsp, req, rsp)
 
-  localparam id_t TileId = '{x: 1'b0, y: 1'b0, port_id: 1'b0};
+  localparam id_t TileId       = '{x: 1'b0, y: 1'b0, port_id: 1'b0};
+  localparam id_t RemoteTileId = '{x: 1'b0, y: 1'b1, port_id: 1'b0};
 
   localparam int unsigned FlooReqBits = $bits(floo_req_t);
   localparam int unsigned FlooRspBits = $bits(floo_rsp_t);

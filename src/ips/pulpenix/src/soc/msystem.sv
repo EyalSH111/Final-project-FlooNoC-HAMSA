@@ -511,7 +511,7 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
                         .NB_SLAVE       ( 6                    ),
                         .AXI_ADDR_WIDTH ( `AXI_ADDR_WIDTH      ),
                         .AXI_DATA_WIDTH ( `AXI_DATA_WIDTH      ),
-                        .AXI_ID_WIDTH   ( `AXI_ID_SLAVE_WIDTH  ),
+                        .AXI_ID_WIDTH   ( `AXI_ID_MASTER_WIDTH ),
                         .AXI_USER_WIDTH ( `AXI_USER_WIDTH      )
                         )
    axi_interconnect_i (
@@ -687,66 +687,34 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
    assign floo_north_rsp_o          = router_rsp_out[PortNorth];
    assign router_rsp_in[PortNorth]  = floo_north_rsp_in;
 
-   assign router_req_in[PortEast]  = '0;
-   assign router_req_in[PortSouth] = '0;
-   assign router_req_in[PortWest]  = '0;
-   assign router_rsp_out[PortEast]  = '0;
-   assign router_rsp_out[PortSouth] = '0;
-   assign router_rsp_out[PortWest]  = '0;
+  assign router_req_in[PortEast]  = '0;
+  assign router_req_in[PortSouth] = '0;
+  assign router_req_in[PortWest]  = '0;
+  assign router_rsp_out[PortEast]  = '0;
+  assign router_rsp_out[PortSouth] = '0;
+  assign router_rsp_out[PortWest]  = '0;
 
-   // Stage-1 single tile: registered eject loopback (avoid same-cycle comb loop into NI)
-   assign router_req_in[PortEject]  = '0;
-   assign router_rsp_out[PortEject] = '0;
-   assign router_rsp_in[PortEject]  = '0;
+  // Full-integration demo: tile0 Chimney injects/ejects through router port 4.
+  // North is connected at the top level to a remote Chimney + AXI register slave.
+  assign router_req_in[PortEject].valid = chimney_floo_req_o.valid;
+  assign router_req_in[PortEject].req   = chimney_floo_req_o.req;
+  assign router_req_in[PortEject].ready = 1'b1;
 
-   assign chimney_floo_req_i.ready = 1'b1;
-   assign chimney_floo_rsp_i.ready = 1'b1;
+  assign chimney_floo_req_i.valid = router_req_out[PortEject].valid;
+  assign chimney_floo_req_i.req   = router_req_out[PortEject].req;
+  assign chimney_floo_req_i.ready = router_req_out[PortEject].ready;
 
-   always_ff @(posedge clk_sys or negedge rstn_sys) begin
-     if (!rstn_sys) begin
-       chimney_floo_req_i.valid <= 1'b0;
-       chimney_floo_req_i.req   <= '0;
-       chimney_floo_rsp_i.valid <= 1'b0;
-       chimney_floo_rsp_i.rsp   <= '0;
-     end else begin
-       chimney_floo_req_i.valid <= chimney_floo_req_o.valid;
-       chimney_floo_req_i.req   <= chimney_floo_req_o.req;
-       chimney_floo_rsp_i.valid <= chimney_floo_rsp_o.valid;
-       chimney_floo_rsp_i.rsp   <= chimney_floo_rsp_o.rsp;
-     end
-   end
+  assign router_rsp_in[PortEject].valid = chimney_floo_rsp_o.valid;
+  assign router_rsp_in[PortEject].rsp   = chimney_floo_rsp_o.rsp;
+  assign router_rsp_in[PortEject].ready = 1'b1;
 
-`ifdef RTL_SIM
-   // Stage-1 bring-up: NoRoB ties manager aw_ready to NoC grant; OR-through unblocks TB stim.
-   logic floo_mgr_b_pend;
+  assign chimney_floo_rsp_i.valid = router_rsp_out[PortEject].valid;
+  assign chimney_floo_rsp_i.rsp   = router_rsp_out[PortEject].rsp;
+  assign chimney_floo_rsp_i.ready = router_rsp_out[PortEject].ready;
 
-   always_ff @(posedge clk_sys or negedge rstn_sys) begin
-     if (!rstn_sys)
-       floo_mgr_b_pend <= 1'b0;
-     else begin
-       if (chimney_mgr_req.w_valid && chimney_mgr_rsp_int.w_ready && chimney_mgr_req.w.last)
-         floo_mgr_b_pend <= 1'b1;
-       if (chimney_mgr_rsp_int.b_valid && chimney_mgr_req.b_ready)
-         floo_mgr_b_pend <= 1'b0;
-     end
-   end
+  assign chimney_mgr_rsp = chimney_mgr_rsp_int;
 
-   always_comb begin
-     chimney_mgr_rsp            = chimney_mgr_rsp_int;
-     chimney_mgr_rsp.aw_ready   = chimney_mgr_rsp_int.aw_ready | chimney_mgr_req.aw_valid;
-     chimney_mgr_rsp.w_ready    = chimney_mgr_rsp_int.w_ready  | chimney_mgr_req.w_valid;
-     chimney_mgr_rsp.b_valid    = chimney_mgr_rsp_int.b_valid  | floo_mgr_b_pend;
-     if (floo_mgr_b_pend) begin
-       chimney_mgr_rsp.b.resp = 2'b00;
-       chimney_mgr_rsp.b.id   = '0;
-       chimney_mgr_rsp.b.user = 1'b0;
-     end
-   end
-
-   initial $display("[FLOO_BUILD] msystem stage1 RTL_SIM: floo shims + core fetch/clk bypass (see vqm wrap testmode for UART clk)");
-`else
-   assign chimney_mgr_rsp = chimney_mgr_rsp_int;
-`endif
+  initial $display("[FLOO_BUILD] msystem 2x2 RTL_SIM: xtrn -> chimney -> router -> north remote endpoint");
 
 `else // FLOO_CHIMNEY_DISABLED — break test: xtrn isolated from NoC
 
@@ -771,37 +739,15 @@ module msystem #(parameter MEM_CTRL_VEC_DW = 32)
 
    `AXI_ASSIGN_MASTER(slaves[4], xtrn_master_int)
    `AXI_ASSIGN_SLAVE(masters[4], xtrn_slave_int)
-   `AXI_DEGENERATE_MASTER(xtrn_master_int)
+   // No transactions on port 4, but r_ready/b_ready must be 1 (DEGENERATE_MASTER forces 0
+   // and blocks axi_node from asserting slaves[2].r_ready — seen in UART_DBG bisect).
+   assign xtrn_slave_int.aw_valid = 1'b0;
+   assign xtrn_slave_int.ar_valid = 1'b0;
+   assign xtrn_slave_int.w_valid  = 1'b0;
+   assign xtrn_slave_int.r_ready  = 1'b1;
+   assign xtrn_slave_int.b_ready  = 1'b1;
 
-   assign xtrn_slave_int.aw_ready = 1'b1;
-   assign xtrn_slave_int.ar_ready = 1'b1;
-   assign xtrn_slave_int.w_ready  = 1'b1;
-   assign xtrn_slave_int.b_valid  = 1'b0;
-   assign xtrn_slave_int.b_resp   = 2'b00;
-   assign xtrn_slave_int.b_id     = '0;
-   assign xtrn_slave_int.b_user   = '0;
-   assign xtrn_slave_int.r_valid  = 1'b0;
-   assign xtrn_slave_int.r_resp   = 2'b00;
-   assign xtrn_slave_int.r_data   = '0;
-   assign xtrn_slave_int.r_last   = 1'b1;
-   assign xtrn_slave_int.r_id     = '0;
-   assign xtrn_slave_int.r_user   = '0;
-
-   assign xtrn_master_int.aw_ready = 1'b1;
-   assign xtrn_master_int.ar_ready = 1'b1;
-   assign xtrn_master_int.w_ready  = 1'b1;
-   assign xtrn_master_int.b_valid  = 1'b0;
-   assign xtrn_master_int.b_resp   = 2'b00;
-   assign xtrn_master_int.b_id     = '0;
-   assign xtrn_master_int.b_user   = '0;
-   assign xtrn_master_int.r_valid  = 1'b0;
-   assign xtrn_master_int.r_resp   = 2'b00;
-   assign xtrn_master_int.r_data   = '0;
-   assign xtrn_master_int.r_last   = 1'b1;
-   assign xtrn_master_int.r_id     = '0;
-   assign xtrn_master_int.r_user   = '0;
-
-   initial $display("[FLOO_BUILD] msystem: FLOO_CHIMNEY_DISABLED — xtrn port 4 tied off");
+   initial $display("[FLOO_BUILD] msystem: FLOO_CHIMNEY_DISABLED — xtrn port 4 idle (r_ready/b_ready=1)");
 
 `endif
 

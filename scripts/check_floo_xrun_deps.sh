@@ -32,6 +32,10 @@ if [[ ! -f src/ips/floo_noc/xrun_compat/axi_sim/axi_pkg.sv ]]; then
   echo "FAIL: missing xrun_compat/axi_sim/axi_pkg.sv"
   fail=1
 fi
+if ! grep -q 'delta_counter/delta_counter.sv' src/ips/floo_noc/floo_noc_deps.f 2>/dev/null; then
+  echo "FAIL: floo_noc_deps.f missing delta_counter (git pull or python3 scripts/gen_floo_noc_deps_f.py)"
+  fail=1
+fi
 if grep -q '^+INCDIR+$PULP_ENV/src/$' src/tb/fpgnix_tb.f 2>/dev/null; then
   echo "FAIL: fpgnix_tb.f still has broad +INCDIR+\$PULP_ENV/src/"
   fail=1

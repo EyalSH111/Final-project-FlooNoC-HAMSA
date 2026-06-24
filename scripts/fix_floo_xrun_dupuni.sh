@@ -35,7 +35,6 @@ else
 +incdir+$PULP_ENV/src/ips/floo_noc/deps/axi/include
 $PULP_ENV/src/ips/common_cells/src/cf_math_pkg.sv
 $PULP_ENV/src/ips/floo_noc/xrun_compat/axi_sim/axi_pkg.sv
-$PULP_ENV/src/ips/floo_noc/xrun_compat/axi_sim/axi_intf.sv
 $PULP_ENV/src/ips/common_cells/src/sync.sv
 $PULP_ENV/src/ips/common_cells/src/binary_to_gray.sv
 $PULP_ENV/src/ips/common_cells/src/gray_to_binary.sv
@@ -49,6 +48,7 @@ $PULP_ENV/src/ips/common_cells/src/stream_register.sv
 $PULP_ENV/src/ips/common_cells/src/stream_arbiter_flushable.sv
 $PULP_ENV/src/ips/common_cells/src/stream_arbiter.sv
 $PULP_ENV/src/ips/common_cells/src/cdc_fifo_gray.sv
+$PULP_ENV/src/ips/floo_noc/xrun_compat/delta_counter/delta_counter.sv
 $PULP_ENV/src/ips/floo_noc/xrun_compat/axi_sim/axi_err_slv.sv
 $PULP_ENV/src/ips/floo_noc/xrun_compat/axi_sim/axi_demux_simple.sv
 EOF
