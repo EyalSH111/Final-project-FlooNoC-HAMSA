@@ -421,6 +421,8 @@ logic floo_remote_req_valid;
 logic floo_remote_rsp_valid;
 floo_req_chan_t floo_remote_req;
 floo_rsp_chan_t floo_remote_rsp;
+floo_req_t floo_remote_req_i;
+floo_rsp_t floo_remote_rsp_i;
 
 hamsa_floo_remote_mem_endpoint i_hamsa_floo_remote_mem_endpoint (
     .clk_i            ( floo_tb_clk           ),
@@ -430,16 +432,21 @@ hamsa_floo_remote_mem_endpoint i_hamsa_floo_remote_mem_endpoint (
     .floo_rsp_i       ( fpgnix.floo_rsp_o     ),
     .floo_req_valid_o ( floo_remote_req_valid ),
     .floo_req_o       ( floo_remote_req       ),
-    .floo_req_ready_i ( fpgnix.floo_req_i.ready ),
+    .floo_req_ready_i ( 1'b1                  ),
     .floo_rsp_valid_o ( floo_remote_rsp_valid ),
     .floo_rsp_o       ( floo_remote_rsp       ),
-    .floo_rsp_ready_i ( fpgnix.floo_rsp_i.ready )
+    .floo_rsp_ready_i ( 1'b1                  )
 );
 
-assign fpgnix.floo_req_i.valid = floo_remote_req_valid;
-assign fpgnix.floo_req_i.req   = floo_remote_req;
-assign fpgnix.floo_rsp_i.valid = floo_remote_rsp_valid;
-assign fpgnix.floo_rsp_i.rsp   = floo_remote_rsp;
+assign floo_remote_req_i.valid = floo_remote_req_valid;
+assign floo_remote_req_i.req   = floo_remote_req;
+assign floo_remote_req_i.ready = 1'b1;
+assign floo_remote_rsp_i.valid = floo_remote_rsp_valid;
+assign floo_remote_rsp_i.rsp   = floo_remote_rsp;
+assign floo_remote_rsp_i.ready = 1'b1;
+
+assign fpgnix.floo_req_i = floo_remote_req_i;
+assign fpgnix.floo_rsp_i = floo_remote_rsp_i;
 
 // Stage-1: drive one AXI write on masters[4] (sync to clk_sys / rstn_sys).
 typedef enum logic [2:0] {
