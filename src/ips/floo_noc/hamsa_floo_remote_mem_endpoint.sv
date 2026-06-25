@@ -10,14 +10,20 @@ module hamsa_floo_remote_mem_endpoint (
   input  logic      test_enable_i,
   input  floo_req_t floo_req_i,
   input  floo_rsp_t floo_rsp_i,
-  output floo_req_t floo_req_o,
-  output floo_rsp_t floo_rsp_o
+  output logic      floo_req_valid_o,
+  output floo_req_chan_t floo_req_o,
+  input  logic      floo_req_ready_i,
+  output logic      floo_rsp_valid_o,
+  output floo_rsp_chan_t floo_rsp_o,
+  input  logic      floo_rsp_ready_i
 );
 
   axi_in_req_t  remote_mgr_req;
   axi_in_rsp_t  remote_mgr_rsp;
   axi_out_req_t remote_slv_req;
   axi_out_rsp_t remote_slv_rsp;
+  floo_req_t    remote_floo_req_o;
+  floo_rsp_t    remote_floo_rsp_o;
 
   logic [31:0] remote_reg_q;
   logic        remote_aw_seen_q;
@@ -54,11 +60,17 @@ module hamsa_floo_remote_mem_endpoint (
     .axi_out_req_o   ( remote_slv_req ),
     .axi_out_rsp_i   ( remote_slv_rsp ),
     .id_i            ( RemoteTileId   ),
-    .flit_req_out_o  ( floo_req_o     ),
-    .flit_rsp_out_o  ( floo_rsp_o     ),
+    .flit_req_out_o  ( remote_floo_req_o ),
+    .flit_rsp_out_o  ( remote_floo_rsp_o ),
     .flit_req_in_i   ( floo_req_i     ),
     .flit_rsp_in_i   ( floo_rsp_i     )
   );
+
+  assign floo_req_valid_o      = remote_floo_req_o.valid;
+  assign floo_req_o            = remote_floo_req_o.req;
+
+  assign floo_rsp_valid_o      = remote_floo_rsp_o.valid;
+  assign floo_rsp_o            = remote_floo_rsp_o.rsp;
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
@@ -78,7 +90,7 @@ module hamsa_floo_remote_mem_endpoint (
                  remote_req_flit_count_q + 1, $time);
       end
 
-      if (floo_rsp_o.valid && floo_rsp_o.ready) begin
+      if (floo_rsp_valid_o && floo_rsp_ready_i) begin
         remote_rsp_flit_count_q <= remote_rsp_flit_count_q + 1;
         $display("[FLOO_2X2] remote endpoint emitted rsp flit_count=%0d @ time %0t",
                  remote_rsp_flit_count_q + 1, $time);
