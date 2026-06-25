@@ -27,6 +27,7 @@ module hamsa_floo_remote_mem_endpoint (
 
   logic [31:0] remote_reg_q;
   logic        remote_aw_seen_q;
+  logic        remote_w_seen_q;
   logic        remote_b_pending_q;
   logic        remote_r_pending_q;
   axi_out_id_t remote_b_id_q;
@@ -76,6 +77,7 @@ module hamsa_floo_remote_mem_endpoint (
     if (!rst_ni) begin
       remote_reg_q            <= '0;
       remote_aw_seen_q        <= 1'b0;
+      remote_w_seen_q         <= 1'b0;
       remote_b_pending_q      <= 1'b0;
       remote_r_pending_q      <= 1'b0;
       remote_b_id_q           <= '0;
@@ -104,12 +106,19 @@ module hamsa_floo_remote_mem_endpoint (
       end
 
       if (remote_slv_req.w_valid && remote_slv_rsp.w_ready && remote_slv_req.w.last) begin
-        remote_reg_q         <= remote_slv_req.w.data;
-        remote_b_pending_q   <= 1'b1;
-        remote_aw_seen_q     <= 1'b0;
-        remote_write_count_q <= remote_write_count_q + 1;
+        remote_reg_q     <= remote_slv_req.w.data;
+        remote_w_seen_q  <= 1'b1;
         $display("[FLOO_2X2] remote AXI W data=0x%08x write_count=%0d @ time %0t",
                  remote_slv_req.w.data, remote_write_count_q + 1, $time);
+      end
+
+      if (!remote_b_pending_q && remote_aw_seen_q && remote_w_seen_q) begin
+        remote_aw_seen_q     <= 1'b0;
+        remote_w_seen_q      <= 1'b0;
+        remote_b_pending_q   <= 1'b1;
+        remote_write_count_q <= remote_write_count_q + 1;
+        $display("[FLOO_2X2] remote AXI write complete -> B pending count=%0d @ time %0t",
+                 remote_write_count_q + 1, $time);
       end
 
       if (remote_slv_rsp.b_valid && remote_slv_req.b_ready) begin
@@ -131,8 +140,8 @@ module hamsa_floo_remote_mem_endpoint (
     end
   end
 
-  assign remote_slv_rsp.aw_ready = !remote_b_pending_q;
-  assign remote_slv_rsp.w_ready  = !remote_b_pending_q && remote_aw_seen_q;
+  assign remote_slv_rsp.aw_ready = !remote_b_pending_q && !remote_aw_seen_q;
+  assign remote_slv_rsp.w_ready  = !remote_b_pending_q && !remote_w_seen_q;
   assign remote_slv_rsp.ar_ready = !remote_r_pending_q;
 
   assign remote_slv_rsp.b_valid  = remote_b_pending_q;
