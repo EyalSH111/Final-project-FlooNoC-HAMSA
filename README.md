@@ -1,10 +1,33 @@
 
 # HAMSA + FlooNoC Integration
 
-This branch contains the HAMSA/FlooNoC integration demos.
+This repository contains a working HAMSA/PULPenix SoC integration with FlooNoC.
+The main proof is an end-to-end AXI transaction path: HAMSA-side external AXI
+traffic enters FlooNoC, crosses the NoC fabric, reaches a remote AXI endpoint,
+writes data into a selected remote memory region, reads it back, and checks the
+result in simulation.
 
-- Stable Stage-1 PoC: HAMSA xtrn AXI traffic is converted into Floo flits.
-- Full integration demo: HAMSA xtrn AXI traffic crosses a FlooNoC path to a NoC-side AXI endpoint with multiple memory-mapped slave regions, writes several words, reads them back, checks correctness, and prints latency per transaction.
+The current branch is:
+
+```text
+hamsa-separate-remote-endpoints
+```
+
+What this branch demonstrates:
+
+- HAMSA still boots and runs the `helloworld` software.
+- The HAMSA `xtrn` AXI path is connected into FlooNoC through AXI/Floo Chimney logic.
+- Remote traffic is decoded into three memory-mapped AXI slave regions.
+- The testbench can choose the target, first word, number of words, and data from the command line.
+- The simulation prints PASS/FAIL and per-transaction latency in cycles.
+
+Detailed documentation is in:
+
+```text
+docs/floo_2x2_full_integration/HAMSA_FlooNoC_Project_Report.md
+docs/floo_2x2_full_integration/HAMSA_FlooNoC_Full_Integration_Report.md
+docs/floo_2x2_full_integration/HAMSA_FlooNoC_Full_Integration_Report.docx
+```
 
 ## Quick Run On RC / TSMC65
 
@@ -32,7 +55,7 @@ git pull --ff-only origin hamsa-separate-remote-endpoints
 source cloud_setup.sh
 ```
 
-Run the default end-to-end RAM readback test:
+Run the default end-to-end readback test:
 
 ```bash
 ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60"
@@ -47,20 +70,25 @@ Hey we use floonoc!
 --- FINISH ---
 ```
 
-Choose which remote AXI slave and words to exercise:
+Run each remote AXI target separately:
 
 ```bash
-# Small fast register-file target, words 1..4.
+# Target 0: small register-file slave, words 1..4.
 ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_TARGET=0 +FLOO_REMOTE_IDX=1 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=A0000001"
 
-# Medium RAM target, words 16..19.
+# Target 1: medium RAM slave, words 16..19.
 ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_TARGET=1 +FLOO_REMOTE_IDX=16 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=B0001000"
 
-# Large RAM target, words 256..259.
+# Target 2: large RAM slave, words 256..259.
 ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_TARGET=2 +FLOO_REMOTE_IDX=256 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=C0002000"
 ```
 
-`FLOO_REMOTE_TARGET` selects one of three remote AXI slave regions. `FLOO_REMOTE_IDX` selects the first word inside that target. The TB writes `FLOO_REMOTE_WORDS` consecutive words, then reads them back. The base address remains `0x0010_0000`, which routes to the remote tile/endpoint by setting `XYAddrOffsetY=20`.
+Each command runs one target. To prove all three remote memories, run the three
+commands above one after another. `FLOO_REMOTE_TARGET` selects one of three
+remote AXI slave regions. `FLOO_REMOTE_IDX` selects the first word inside that
+target. The TB writes `FLOO_REMOTE_WORDS` consecutive words, then reads them
+back. The base address remains `0x0010_0000`, which routes to the remote
+tile/endpoint by setting `XYAddrOffsetY=20`.
 
 Address map:
 
@@ -68,6 +96,14 @@ Address map:
 target 0: small fast register file, 16 x 32-bit  -> 0x0010_0000 .. 0x0010_00ff
 target 1: medium RAM,              256 x 32-bit -> 0x0010_1000 .. 0x0010_13ff
 target 2: large RAM,              1024 x 32-bit -> 0x0010_2000 .. 0x0010_2fff
+```
+
+Memory size meaning:
+
+```text
+16 x 32-bit   = 16 words, each word is 32 bits / 4 bytes
+256 x 32-bit  = 256 words, 1024 bytes total
+1024 x 32-bit = 1024 words, 4096 bytes total
 ```
 
 Useful proof lines in `helloworld/xrun.log`:
@@ -86,7 +122,16 @@ Performance measurement is printed directly by the testbench:
 [FLOO_STIM] read response target=... word=... data=... latency_cycles=...
 ```
 
-Use these lines to compare the small register file, medium RAM, and large RAM runs. In the current single-beat directed tests, the expected values are typically about 8 cycles for writes and 6 cycles for reads.
+Use these lines to compare the small register file, medium RAM, and large RAM
+runs. In the current single-beat directed tests, the observed values are:
+
+```text
+write response latency: 8 cycles
+read response latency:  6 cycles
+```
+
+This is a directed latency measurement for the integrated path, not a full
+throughput benchmark.
 
 Open waves after a `PROBE=true` run:
 

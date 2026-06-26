@@ -6,6 +6,8 @@ from xml.sax.saxutils import escape
 ROOT = Path(__file__).resolve().parent
 MD_PATH = ROOT / "HAMSA_FlooNoC_Full_Integration_Report.md"
 DOCX_PATH = ROOT / "HAMSA_FlooNoC_Full_Integration_Report.docx"
+PROJECT_MD_PATH = ROOT / "HAMSA_FlooNoC_Project_Report.md"
+PROJECT_DOCX_PATH = ROOT / "HAMSA_FlooNoC_Project_Report.docx"
 
 
 def text_runs(text: str, style: str | None = None) -> str:
@@ -137,16 +139,22 @@ DOC_RELS = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 """
 
 
-def main() -> None:
-    md = MD_PATH.read_text(encoding="utf-8")
+def write_docx(md_path: Path, docx_path: Path) -> None:
+    md = md_path.read_text(encoding="utf-8")
     document_xml = make_document_xml(parse_markdown(md))
-    with ZipFile(DOCX_PATH, "w", ZIP_DEFLATED) as zf:
+    with ZipFile(docx_path, "w", ZIP_DEFLATED) as zf:
         zf.writestr("[Content_Types].xml", CONTENT_TYPES)
         zf.writestr("_rels/.rels", RELS)
         zf.writestr("word/_rels/document.xml.rels", DOC_RELS)
         zf.writestr("word/styles.xml", STYLES_XML)
         zf.writestr("word/document.xml", document_xml)
-    print(DOCX_PATH)
+    print(docx_path)
+
+
+def main() -> None:
+    write_docx(MD_PATH, DOCX_PATH)
+    if PROJECT_MD_PATH.exists():
+        write_docx(PROJECT_MD_PATH, PROJECT_DOCX_PATH)
 
 
 if __name__ == "__main__":
