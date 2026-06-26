@@ -474,7 +474,7 @@ integer            floo_fail_count;
 integer            floo_axi_cycle;
 integer            floo_write_start_cycle [0:3];
 integer            floo_read_start_cycle  [0:3];
-integer            floo_init_idx;
+integer            floo_reset_idx;
 logic [31:0]       floo_remote_base_addr;
 logic [31:0]       floo_remote_data;
 logic [7:0]        floo_current_word;
@@ -492,14 +492,6 @@ initial begin
     floo_remote_words     = 4;
     floo_remote_base_addr = 32'h0010_0000;
     floo_remote_data      = 32'hF100_F100;
-    floo_txn_idx          = 0;
-    floo_pass_count       = 0;
-    floo_fail_count       = 0;
-    floo_axi_cycle        = 0;
-    for (floo_init_idx = 0; floo_init_idx < 4; floo_init_idx = floo_init_idx + 1) begin
-        floo_write_start_cycle[floo_init_idx] = 0;
-        floo_read_start_cycle[floo_init_idx]  = 0;
-    end
     void'($value$plusargs("FLOO_STIM_DELAY=%d", floo_stim_start_delay));
     void'($value$plusargs("FLOO_STIM_MAX_CYCLES=%d", floo_stim_max_cycles));
     void'($value$plusargs("FLOO_REMOTE_IDX=%d", floo_remote_idx));
@@ -528,6 +520,10 @@ always_ff @(posedge floo_tb_clk or negedge floo_rstn) begin : floo_axi_stim
         floo_pass_count  <= 0;
         floo_fail_count  <= 0;
         floo_axi_cycle   <= 0;
+        for (floo_reset_idx = 0; floo_reset_idx < 4; floo_reset_idx = floo_reset_idx + 1) begin
+            floo_write_start_cycle[floo_reset_idx] <= 0;
+            floo_read_start_cycle[floo_reset_idx]  <= 0;
+        end
         fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid  <= 1'b0;
         fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_valid  <= 1'b0;
         fpgnix.vqm_msystem_wrap.msystem.masters[4].w_valid   <= 1'b0;
