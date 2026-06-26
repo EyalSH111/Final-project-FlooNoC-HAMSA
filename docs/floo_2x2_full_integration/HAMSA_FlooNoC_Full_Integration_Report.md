@@ -2,14 +2,14 @@
 
 ## Executive Summary
 
-This work integrates FlooNoC into the HAMSA/PULPenix SoC by routing HAMSA's external AXI path (`xtrn`, exposed through `masters[4]` / `slaves[4]`) through a Floo AXI Chimney and Router. The final demo proves a full end-to-end transaction: HAMSA-side AXI traffic is converted into Floo flits, routed to a remote NoC-side endpoint, converted back to AXI, written into a selectable remote AXI RAM bank, read back, and checked for correctness.
+This work integrates FlooNoC into the HAMSA/PULPenix SoC by routing HAMSA's external AXI path (`xtrn`, exposed through `masters[4]` / `slaves[4]`) through a Floo AXI Chimney and Router. The final demo proves a full end-to-end transaction: HAMSA-side AXI traffic is converted into Floo flits, routed to a remote NoC-side endpoint, converted back to AXI, written into a selectable remote AXI slave region, read back, and checked for correctness.
 
-The latest proof is stronger than the original single-register demo. The remote endpoint now contains four independent 256-word RAM banks, and the testbench can select which RAM bank and which words to access using plusargs.
+The latest branch is stronger than the equal-bank demo. The remote endpoint now exposes three different memory-mapped AXI slave regions: a small fast register file, a medium RAM, and a large RAM. The testbench can select which slave region and which words to access using plusargs.
 
 Final proof line from the passing run:
 
 ```text
-[FLOO_2X2] PASS: 4/4 remote RAM readbacks matched
+[FLOO_2X2] PASS: 4/4 remote slave readbacks matched
 Hey we use floonoc!
 --- FINISH ---
 ```
@@ -39,15 +39,14 @@ Hey we use floonoc!
                       north NoC link
                            |
                            v
-              Remote Floo AXI RAM Endpoint
+              Remote Floo AXI Slave Endpoint
              +-----------------------------+
              | remote Chimney              |
              | Floo flits <-> AXI          |
              |                             |
-             | RAM bank 0: 256 x 32-bit    |
-             | RAM bank 1: 256 x 32-bit    |
-             | RAM bank 2: 256 x 32-bit    |
-             | RAM bank 3: 256 x 32-bit    |
+             | small reg: 16 x 32-bit      |
+             | medium RAM: 256 x 32-bit    |
+             | large RAM: 1024 x 32-bit    |
              +-----------------------------+
 ```
 
@@ -67,7 +66,8 @@ Hey we use floonoc!
    remote location.
 
 5. Remote hamsa_floo_remote_mem_endpoint accepts request flits, uses a second
-   Chimney to reconstruct AXI, and performs the access on a local AXI RAM bank.
+   Chimney to reconstruct AXI, decodes the address, and performs the access on
+   a local memory-mapped AXI slave region.
 
 6. The remote endpoint sends B or R responses back through FlooNoC.
 
@@ -75,33 +75,33 @@ Hey we use floonoc!
    checks the readback data and prints PASS/FAIL.
 ```
 
-## Remote RAM Bank Map
+## Remote AXI Slave Memory Map
 
-The current endpoint contains four independent RAM banks. Each bank has 256 words, and each word is 32 bits.
+The current endpoint contains three different AXI slave regions:
 
 ```text
-RAM bank 0 -> 0x0010_0000 .. 0x0010_03ff
-RAM bank 1 -> 0x0010_0400 .. 0x0010_07ff
-RAM bank 2 -> 0x0010_0800 .. 0x0010_0bff
-RAM bank 3 -> 0x0010_0c00 .. 0x0010_0fff
+target 0: small fast register file, 16 x 32-bit  -> 0x0010_0000 .. 0x0010_00ff
+target 1: medium RAM,              256 x 32-bit -> 0x0010_1000 .. 0x0010_13ff
+target 2: large RAM,              1024 x 32-bit -> 0x0010_2000 .. 0x0010_2fff
 ```
 
 Address decoding inside the remote endpoint:
 
 ```text
 address[20]    -> routes traffic to remote NoC endpoint
-address[11:10] -> selects RAM bank 0..3
-address[9:2]   -> selects word 0..255 inside that RAM bank
+address[13:12] -> selects target 0..2
+address[5:2]   -> word inside small register file
+address[9:2]   -> word inside medium RAM
+address[11:2]  -> word inside large RAM
 address[1:0]   -> byte offset inside the 32-bit word
 ```
 
 Example:
 
 ```text
-0x0010_0840 = bank 2, word 16
-0x0010_0844 = bank 2, word 17
-0x0010_0848 = bank 2, word 18
-0x0010_084c = bank 2, word 19
+0x0010_0000 = small_reg, word 0
+0x0010_1040 = medium_ram, word 16
+0x0010_2400 = large_ram, word 256
 ```
 
 ## How To Run
@@ -112,34 +112,40 @@ From the RC / TSMC65 environment:
 tsmc65
 cd /data/project/tsmc65/users/eyalsho/ws/ddp23_pnx_PoC
 source cloud_setup.sh
-git checkout hamsa-2x2-full-integration
+git checkout hamsa-separate-remote-endpoints
 git fetch origin
-git reset --hard origin/hamsa-2x2-full-integration
+git reset --hard origin/hamsa-separate-remote-endpoints
 ```
 
-Default proof, RAM bank 0, words 0..3:
+Small register-file target, words 0..3:
 
 ```bash
-ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60"
+ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_TARGET=0 +FLOO_REMOTE_IDX=0 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=A0000000"
 ```
 
-Selectable RAM proof, RAM bank 2, words 16..19:
+Medium RAM target, words 16..19:
 
 ```bash
-ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_BANK=2 +FLOO_REMOTE_IDX=16 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=ABCD2000"
+ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_TARGET=1 +FLOO_REMOTE_IDX=16 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=B0001000"
+```
+
+Large RAM target, words 256..259:
+
+```bash
+ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_TARGET=2 +FLOO_REMOTE_IDX=256 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=C0002000"
 ```
 
 Extract the proof from the log:
 
 ```bash
-grep -E '\*E|FLOO_BUILD|FLOO_2X2|FLOO_STIM|FLOO_MON|TIMEOUT|Hey|FINISH|PASS|FAIL|latency_cycles|bank=' helloworld/xrun.log
+grep -E '\*E|FLOO_BUILD|FLOO_2X2|FLOO_STIM|FLOO_MON|TIMEOUT|Hey|FINISH|PASS|FAIL|latency_cycles|target=|slave=' helloworld/xrun.log
 ```
 
 ## Testbench Options
 
 ```text
-FLOO_REMOTE_BANK  = RAM bank to access, 0..3
-FLOO_REMOTE_IDX   = first word inside that RAM bank, 0..255
+FLOO_REMOTE_TARGET = slave region to access: 0=small_reg, 1=medium_ram, 2=large_ram
+FLOO_REMOTE_IDX    = first word inside that target
 FLOO_REMOTE_WORDS = number of consecutive words to test, 1..4
 FLOO_REMOTE_DATA  = first write data value
 ```
@@ -147,31 +153,31 @@ FLOO_REMOTE_DATA  = first write data value
 The testbench writes consecutive data values. For example:
 
 ```bash
-+FLOO_REMOTE_BANK=2 +FLOO_REMOTE_IDX=16 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=ABCD2000
++FLOO_REMOTE_TARGET=2 +FLOO_REMOTE_IDX=256 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=C0002000
 ```
 
 produces:
 
 ```text
-bank 2 word 16 -> 0xabcd2000
-bank 2 word 17 -> 0xabcd2001
-bank 2 word 18 -> 0xabcd2002
-bank 2 word 19 -> 0xabcd2003
+large_ram word 256 -> 0xc0002000
+large_ram word 257 -> 0xc0002001
+large_ram word 258 -> 0xc0002002
+large_ram word 259 -> 0xc0002003
 ```
 
-## Proof From Passing Run
+## Expected Proof From RC Runs
 
-The passing run targeted bank 2, words 16..19:
+Each target run should show the selected remote slave, the decoded address, four readbacks, and a final pass summary:
 
 ```text
-[FLOO_STIM] remote RAM target base=0x00100000 bank=2 first_word=16 words=4 first_data=0xabcd2000
-[FLOO_2X2] remote AXI RAM AR addr=0x00100840 bank=2 word=16 id=0x7f @ time 54350000
-[FLOO_2X2] remote AXI RAM R response accepted bank=2 word=16 data=0xabcd2000 @ time 54450000
-[FLOO_STIM] read response bank=2 word=16 data=0xabcd2000 latency_cycles=6 @ time 54650000
-[FLOO_2X2] PASS: remote RAM readback bank=2 word=16 data=0xabcd2000
+[FLOO_STIM] remote target base=0x00100000 target=2 offset=0x00002000 first_word=256 words=4 first_data=0xc0002000
+[FLOO_2X2] remote AXI slave AR addr=0x00102400 slave=large_ram ...
+[FLOO_2X2] remote AXI slave R response accepted slave=large_ram ... data=0xc0002000
+[FLOO_STIM] read response target=2 word=256 data=0xc0002000 latency_cycles=...
+[FLOO_2X2] PASS: remote slave readback target=2 word=256 data=0xc0002000
 ...
-[FLOO_2X2] SUMMARY: remote RAM readbacks pass=4 fail=0 total=4
-[FLOO_2X2] PASS: 4/4 remote RAM readbacks matched
+[FLOO_2X2] SUMMARY: remote slave readbacks pass=4 fail=0 total=4
+[FLOO_2X2] PASS: 4/4 remote slave readbacks matched
 Hey we use floonoc!
 --- FINISH ---
 ```
@@ -181,11 +187,11 @@ Hey we use floonoc!
 The testbench records a simple latency counter around each AXI transaction. It prints:
 
 ```text
-[FLOO_STIM] write response bank=... word=... latency_cycles=...
-[FLOO_STIM] read response bank=... word=... data=... latency_cycles=...
+[FLOO_STIM] write response target=... word=... latency_cycles=...
+[FLOO_STIM] read response target=... word=... data=... latency_cycles=...
 ```
 
-In the passing bank-2 run:
+In the previous passing baseline:
 
 ```text
 write response latency: 8 cycles
@@ -207,8 +213,8 @@ Original proof:
 Current proof:
 
 ```text
-4 writes + 4 reads to consecutive words in a selected RAM bank
-bank selection + word selection + unique data per word
+4 writes + 4 reads to consecutive words in a selected remote slave region
+target selection + word selection + unique data per word
 PASS/FAIL summary across all readbacks
 latency printed for each transaction
 ```
@@ -223,13 +229,13 @@ The demo proves:
 - The HAMSA `xtrn` AXI path is connected to FlooNoC through glue and Chimney logic.
 - AXI requests are converted into Floo flits and cross the router/north link.
 - A remote endpoint receives the flits and reconstructs AXI transactions.
-- The remote AXI RAM bank stores different data values at different addresses.
+- Different remote AXI slave regions store different data values at different addresses.
 - AXI read responses return through the reverse NoC path and match expected data.
-- The testbench can select different RAM banks and addresses without RTL edits.
+- The testbench can select different remote slaves and addresses without RTL edits.
 
 ## What This Does Not Yet Prove
 
-The demo does not yet instantiate four physically separate NoC tiles, each with a separate router coordinate. Instead, it implements four independent RAM banks behind one remote NoC endpoint. This is a good final-project tradeoff: it demonstrates address-based remote memory selection through the integrated NoC path while avoiding the risk of a late topology expansion.
+The demo does not yet instantiate multiple physically separate NoC tiles, each with a separate router coordinate. Instead, it implements multiple separate AXI slave regions behind one remote NoC endpoint. This is a good final-project tradeoff: it demonstrates realistic memory-mapped remote slave selection through the integrated NoC path while avoiding the risk of a late topology expansion.
 
 ## Waveform Suggestions
 
@@ -242,20 +248,21 @@ fpgnix_tb.fpgnix.floo_req_o
 fpgnix_tb.fpgnix.floo_rsp_i
 fpgnix_tb.i_hamsa_floo_remote_mem_endpoint.remote_slv_req
 fpgnix_tb.i_hamsa_floo_remote_mem_endpoint.remote_slv_rsp
-fpgnix_tb.i_hamsa_floo_remote_mem_endpoint.remote_aw_bank_q
-fpgnix_tb.i_hamsa_floo_remote_mem_endpoint.remote_ar_bank_q
-fpgnix_tb.i_hamsa_floo_remote_mem_endpoint.remote_aw_idx_q
-fpgnix_tb.i_hamsa_floo_remote_mem_endpoint.remote_ar_idx_q
+fpgnix_tb.i_hamsa_floo_remote_mem_endpoint.remote_aw_target_q
+fpgnix_tb.i_hamsa_floo_remote_mem_endpoint.remote_ar_target_q
+fpgnix_tb.i_hamsa_floo_remote_mem_endpoint.remote_aw_small_idx_q
+fpgnix_tb.i_hamsa_floo_remote_mem_endpoint.remote_aw_medium_idx_q
+fpgnix_tb.i_hamsa_floo_remote_mem_endpoint.remote_aw_large_idx_q
 ```
 
 Recommended screenshots:
 
-- AXI AW/W/B handshake for one write to bank 2.
+- AXI AW/W/B handshake for one write to the selected remote slave.
 - Floo request flit activity on the north link.
-- Remote endpoint AW/W decode showing bank 2 and word 16.
+- Remote endpoint AW/W decode showing `small_reg`, `medium_ram`, or `large_ram`.
 - AXI AR/R handshake for the readback.
-- Final log window showing `PASS: 4/4 remote RAM readbacks matched`.
+- Final log window showing `PASS: 4/4 remote slave readbacks matched`.
 
 ## Short Explanation For Presentation
 
-We integrated FlooNoC into HAMSA by replacing the external/inter-tile AXI path with a Chimney + Router path. The demo drives AXI traffic from HAMSA's `xtrn` port, converts it into Floo flits, sends it to a remote endpoint, converts it back into AXI, and accesses a selectable remote RAM bank. The latest version has four remote RAM banks, each with 256 words. The testbench selects bank 2 and words 16..19, writes unique data values, reads them back, and reports 4/4 matches while HAMSA continues to boot and print `Hey we use floonoc!`.
+We integrated FlooNoC into HAMSA by replacing the external/inter-tile AXI path with a Chimney + Router path. The demo drives AXI traffic from HAMSA's `xtrn` port, converts it into Floo flits, sends it to a remote endpoint, converts it back into AXI, and accesses a selectable remote AXI slave region. The latest version has a small fast register file, a medium RAM, and a large RAM. The testbench selects a target, writes unique data values to consecutive words, reads them back, and reports 4/4 matches while HAMSA continues to boot and print `Hey we use floonoc!`.

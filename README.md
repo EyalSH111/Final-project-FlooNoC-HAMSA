@@ -4,7 +4,7 @@
 This branch contains the HAMSA/FlooNoC integration demos.
 
 - Stable Stage-1 PoC: HAMSA xtrn AXI traffic is converted into Floo flits.
-- Full integration demo: HAMSA xtrn AXI traffic crosses a FlooNoC path to a NoC-side AXI endpoint with four independent 256-word RAM banks, writes several words, reads them back, checks correctness, and prints latency per transaction.
+- Full integration demo: HAMSA xtrn AXI traffic crosses a FlooNoC path to a NoC-side AXI endpoint with multiple memory-mapped slave regions, writes several words, reads them back, checks correctness, and prints latency per transaction.
 
 ## Quick Run On RC / TSMC65
 
@@ -42,42 +42,41 @@ grep -E 'FLOO_BUILD|FLOO_2X2|FLOO_STIM|FLOO_MON|TIMEOUT|Hey|FINISH|write respons
 Expected final proof:
 
 ```text
-[FLOO_2X2] PASS: 4/4 remote RAM readbacks matched
+[FLOO_2X2] PASS: 4/4 remote slave readbacks matched
 Hey we use floonoc!
 --- FINISH ---
 ```
 
-Choose which remote RAM bank and words to exercise:
+Choose which remote AXI slave and words to exercise:
 
 ```bash
-# Default: write/read 4 words in RAM bank 0, starting at word 0.
-ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_BANK=0 +FLOO_REMOTE_IDX=0 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=F100F100"
+# Small fast register-file target, words 0..3.
+ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_TARGET=0 +FLOO_REMOTE_IDX=0 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=A0000000"
 
-# Run the same proof in RAM bank 2, starting at word 16.
-ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_BANK=2 +FLOO_REMOTE_IDX=16 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=ABCD2000"
+# Medium RAM target, words 16..19.
+ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_TARGET=1 +FLOO_REMOTE_IDX=16 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=B0001000"
 
-# Single-word targeted proof in RAM bank 3.
-ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_BANK=3 +FLOO_REMOTE_IDX=3 +FLOO_REMOTE_WORDS=1 +FLOO_REMOTE_DATA=ABCD3003"
+# Large RAM target, words 256..259.
+ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_TARGET=2 +FLOO_REMOTE_IDX=256 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=C0002000"
 ```
 
-`FLOO_REMOTE_BANK` selects one of four independent RAM banks. `FLOO_REMOTE_IDX` selects the first RAM word inside that bank. The TB writes `FLOO_REMOTE_WORDS` consecutive words, then reads them back. Internally, bank selection uses AXI address bits `[11:10]` and word selection uses `[9:2]`. The base address remains `0x0010_0000`, which routes to the remote tile/endpoint by setting `XYAddrOffsetY=20`.
+`FLOO_REMOTE_TARGET` selects one of three remote AXI slave regions. `FLOO_REMOTE_IDX` selects the first word inside that target. The TB writes `FLOO_REMOTE_WORDS` consecutive words, then reads them back. The base address remains `0x0010_0000`, which routes to the remote tile/endpoint by setting `XYAddrOffsetY=20`.
 
 Address map:
 
 ```text
-RAM bank 0 -> 0x0010_0000 .. 0x0010_03ff
-RAM bank 1 -> 0x0010_0400 .. 0x0010_07ff
-RAM bank 2 -> 0x0010_0800 .. 0x0010_0bff
-RAM bank 3 -> 0x0010_0c00 .. 0x0010_0fff
+target 0: small fast register file, 16 x 32-bit  -> 0x0010_0000 .. 0x0010_00ff
+target 1: medium RAM,              256 x 32-bit -> 0x0010_1000 .. 0x0010_13ff
+target 2: large RAM,              1024 x 32-bit -> 0x0010_2000 .. 0x0010_2fff
 ```
 
 Useful proof lines in `helloworld/xrun.log`:
 
 ```text
-[FLOO_STIM] write response bank=... word=... latency_cycles=...
-[FLOO_STIM] read response bank=... word=... data=... latency_cycles=...
-[FLOO_2X2] PASS: remote RAM readback bank=... word=...
-[FLOO_2X2] PASS: 4/4 remote RAM readbacks matched
+[FLOO_STIM] write response target=... word=... latency_cycles=...
+[FLOO_STIM] read response target=... word=... data=... latency_cycles=...
+[FLOO_2X2] PASS: remote slave readback target=... word=...
+[FLOO_2X2] PASS: 4/4 remote slave readbacks matched
 ```
 
 Open waves after a `PROBE=true` run:
