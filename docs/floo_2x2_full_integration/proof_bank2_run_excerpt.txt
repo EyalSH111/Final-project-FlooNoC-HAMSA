@@ -1,0 +1,42 @@
+Passing run: HAMSA + FlooNoC selectable remote AXI RAM bank demo
+Branch: hamsa-2x2-full-integration
+Commit observed on RC: 0b6a2c0 feat: add selectable remote AXI RAM banks
+
+Run command:
+ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_BANK=2 +FLOO_REMOTE_IDX=16 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=ABCD2000"
+
+Key proof excerpt:
+
+[FLOO_BUILD] msystem 2x2 RTL_SIM: xtrn -> chimney -> router -> north remote endpoint
+[FLOO_STIM] remote RAM target base=0x00100000 bank=2 first_word=16 words=4 first_data=0xabcd2000
+[FLOO_STIM] driving AXI RAM read bank=2 word=16 addr=0x00100840 expected=0xabcd2000 @ time 54050000
+[FLOO_2X2] remote AXI RAM AR addr=0x00100840 bank=2 word=16 id=0x7f @ time 54350000
+[FLOO_2X2] remote AXI RAM R response accepted bank=2 word=16 data=0xabcd2000 @ time 54450000
+[FLOO_STIM] read response bank=2 word=16 data=0xabcd2000 latency_cycles=6 @ time 54650000
+[FLOO_2X2] PASS: remote RAM readback bank=2 word=16 data=0xabcd2000
+[FLOO_STIM] driving AXI RAM read bank=2 word=17 addr=0x00100844 expected=0xabcd2001 @ time 54750000
+[FLOO_2X2] remote AXI RAM AR addr=0x00100844 bank=2 word=17 id=0x7f @ time 55050000
+[FLOO_2X2] remote AXI RAM R response accepted bank=2 word=17 data=0xabcd2001 @ time 55150000
+[FLOO_STIM] read response bank=2 word=17 data=0xabcd2001 latency_cycles=6 @ time 55350000
+[FLOO_2X2] PASS: remote RAM readback bank=2 word=17 data=0xabcd2001
+[FLOO_STIM] driving AXI RAM read bank=2 word=18 addr=0x00100848 expected=0xabcd2002 @ time 55450000
+[FLOO_2X2] remote AXI RAM AR addr=0x00100848 bank=2 word=18 id=0x7f @ time 55750000
+[FLOO_2X2] remote AXI RAM R response accepted bank=2 word=18 data=0xabcd2002 @ time 55850000
+[FLOO_STIM] read response bank=2 word=18 data=0xabcd2002 latency_cycles=6 @ time 56050000
+[FLOO_2X2] PASS: remote RAM readback bank=2 word=18 data=0xabcd2002
+[FLOO_STIM] driving AXI RAM read bank=2 word=19 addr=0x0010084c expected=0xabcd2003 @ time 56150000
+[FLOO_2X2] remote AXI RAM AR addr=0x0010084c bank=2 word=19 id=0x7f @ time 56450000
+[FLOO_2X2] remote AXI RAM R response accepted bank=2 word=19 data=0xabcd2003 @ time 56550000
+[FLOO_STIM] read response bank=2 word=19 data=0xabcd2003 latency_cycles=6 @ time 56750000
+[FLOO_2X2] PASS: remote RAM readback bank=2 word=19 data=0xabcd2003
+[FLOO_2X2] SUMMARY: remote RAM readbacks pass=4 fail=0 total=4
+[FLOO_2X2] PASS: 4/4 remote RAM readbacks matched
+Hey we use floonoc!
+--- FINISH ---
+
+Interpretation:
+- HAMSA boots and continues normal UART execution.
+- The testbench selects RAM bank 2 and words 16..19.
+- The AXI addresses are 0x00100840, 0x00100844, 0x00100848, and 0x0010084c.
+- Each write/read travels through the HAMSA xtrn AXI path, glue, Floo Chimney, router/north link, remote Chimney, and remote AXI RAM bank.
+- Read latency reported by the TB is 6 cycles for each shown readback; earlier write responses in the same run reported 8 cycles.
