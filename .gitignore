@@ -29,3 +29,4 @@ src/ips/floo_noc/deps/**/.git/
 
 # Legacy FlooNoC external flow (not used in Stage-1)
 src/tb/floo_noc_irun.f
+hello_ddp23/
