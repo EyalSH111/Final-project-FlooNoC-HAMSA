@@ -117,10 +117,10 @@ git fetch origin
 git reset --hard origin/hamsa-separate-remote-endpoints
 ```
 
-Small register-file target, words 0..3:
+Small register-file target, words 1..4:
 
 ```bash
-ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_TARGET=0 +FLOO_REMOTE_IDX=0 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=A0000000"
+ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_TARGET=0 +FLOO_REMOTE_IDX=1 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=A0000001"
 ```
 
 Medium RAM target, words 16..19:
@@ -198,7 +198,15 @@ write response latency: 8 cycles
 read response latency:  6 cycles
 ```
 
-This is not a full performance benchmark of FlooNoC, because the testbench sends simple single-beat AXI transactions and the remote endpoint is intentionally minimal. It is still useful for report evidence because it shows that the path is not only functionally correct but also measurable.
+For this report, measure performance by collecting the `latency_cycles` fields for each target run:
+
+```text
+target 0: small_reg  write/read latency lines
+target 1: medium_ram write/read latency lines
+target 2: large_ram  write/read latency lines
+```
+
+This is not a full performance benchmark of FlooNoC, because the testbench sends simple single-beat AXI transactions and the remote endpoint is intentionally minimal. It is still useful for report evidence because it shows that the path is not only functionally correct but also measurable. A good report table can list target name, address range, write latency, read latency, and PASS/FAIL result.
 
 ## Stress Test Status
 

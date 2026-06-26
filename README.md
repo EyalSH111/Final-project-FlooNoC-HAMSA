@@ -16,7 +16,7 @@ export DDP23_USER_WS=/data/project/tsmc65/users/$USER/ws
 cd $DDP23_USER_WS
 git clone git@github.com:EyalSH111/Final-project-FlooNoC-HAMSA.git ddp23_pnx_PoC
 cd ddp23_pnx_PoC
-git checkout hamsa-2x2-full-integration
+git checkout hamsa-separate-remote-endpoints
 source cloud_setup.sh
 ```
 
@@ -27,8 +27,8 @@ tsmc65
 export DDP23_USER_WS=/data/project/tsmc65/users/$USER/ws
 cd $DDP23_USER_WS/ddp23_pnx_PoC
 git fetch origin
-git checkout hamsa-2x2-full-integration
-git pull --ff-only origin hamsa-2x2-full-integration
+git checkout hamsa-separate-remote-endpoints
+git pull --ff-only origin hamsa-separate-remote-endpoints
 source cloud_setup.sh
 ```
 
@@ -50,8 +50,8 @@ Hey we use floonoc!
 Choose which remote AXI slave and words to exercise:
 
 ```bash
-# Small fast register-file target, words 0..3.
-ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_TARGET=0 +FLOO_REMOTE_IDX=0 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=A0000000"
+# Small fast register-file target, words 1..4.
+ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_TARGET=0 +FLOO_REMOTE_IDX=1 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=A0000001"
 
 # Medium RAM target, words 16..19.
 ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_TARGET=1 +FLOO_REMOTE_IDX=16 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=B0001000"
@@ -78,6 +78,15 @@ Useful proof lines in `helloworld/xrun.log`:
 [FLOO_2X2] PASS: remote slave readback target=... word=...
 [FLOO_2X2] PASS: 4/4 remote slave readbacks matched
 ```
+
+Performance measurement is printed directly by the testbench:
+
+```text
+[FLOO_STIM] write response target=... word=... latency_cycles=...
+[FLOO_STIM] read response target=... word=... data=... latency_cycles=...
+```
+
+Use these lines to compare the small register file, medium RAM, and large RAM runs. In the current single-beat directed tests, the expected values are typically about 8 cycles for writes and 6 cycles for reads.
 
 Open waves after a `PROBE=true` run:
 
