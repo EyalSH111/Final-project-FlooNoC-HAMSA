@@ -1,4 +1,92 @@
 
+# HAMSA + FlooNoC Integration
+
+This branch contains the HAMSA/FlooNoC integration demos.
+
+- Stable Stage-1 PoC: HAMSA xtrn AXI traffic is converted into Floo flits.
+- Full integration demo: HAMSA xtrn AXI traffic crosses a FlooNoC path to a NoC-side 256-word AXI RAM endpoint, writes several words, reads them back, checks correctness, and prints latency per transaction.
+
+## Quick Run On RC / TSMC65
+
+First-time clone:
+
+```bash
+tsmc65
+export DDP23_USER_WS=/data/project/tsmc65/users/$USER/ws
+cd $DDP23_USER_WS
+git clone git@github.com:EyalSH111/Final-project-FlooNoC-HAMSA.git ddp23_pnx_PoC
+cd ddp23_pnx_PoC
+git checkout hamsa-2x2-full-integration
+source cloud_setup.sh
+```
+
+If the repository already exists:
+
+```bash
+tsmc65
+export DDP23_USER_WS=/data/project/tsmc65/users/$USER/ws
+cd $DDP23_USER_WS/ddp23_pnx_PoC
+git fetch origin
+git checkout hamsa-2x2-full-integration
+git pull --ff-only origin hamsa-2x2-full-integration
+source cloud_setup.sh
+```
+
+Run the default end-to-end RAM readback test:
+
+```bash
+ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60"
+grep -E 'FLOO_BUILD|FLOO_2X2|FLOO_STIM|FLOO_MON|TIMEOUT|Hey|FINISH|write response|read response|PASS|FAIL' helloworld/xrun.log
+```
+
+Expected final proof:
+
+```text
+[FLOO_2X2] PASS: 4/4 remote RAM readbacks matched
+Hey we use floonoc!
+--- FINISH ---
+```
+
+Choose which remote RAM words to exercise:
+
+```bash
+# Default: write/read 4 words starting at RAM word 0.
+ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_IDX=0 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=F100F100"
+
+# Run the same proof from a different remote RAM word.
+ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_IDX=16 +FLOO_REMOTE_WORDS=4 +FLOO_REMOTE_DATA=ABCD1000"
+
+# Single-word targeted proof, useful when showing one selected address.
+ddp23_make APP=helloworld run REBUILD=true PROBE=true XRUN_FLAGS="+FLOO_SIM_TIMEOUT_S=60 +FLOO_REMOTE_IDX=3 +FLOO_REMOTE_WORDS=1 +FLOO_REMOTE_DATA=ABCD0003"
+```
+
+`FLOO_REMOTE_IDX` selects the first RAM word inside the NoC-side endpoint. The TB writes `FLOO_REMOTE_WORDS` consecutive words, then reads them back. Internally, RAM word selection uses AXI address bits `[9:2]`. The base address remains `0x0010_0000`, which routes to the remote tile/endpoint by setting `XYAddrOffsetY=20`.
+
+Useful proof lines in `helloworld/xrun.log`:
+
+```text
+[FLOO_STIM] write response word=... latency_cycles=...
+[FLOO_STIM] read response word=... data=... latency_cycles=...
+[FLOO_2X2] PASS: remote RAM readback word=...
+[FLOO_2X2] PASS: 4/4 remote RAM readbacks matched
+```
+
+Open waves after a `PROBE=true` run:
+
+```bash
+cd helloworld
+simvision waves.shm &
+```
+
+Useful wave hierarchy:
+
+```text
+fpgnix_tb.fpgnix.vqm_msystem_wrap.msystem
+fpgnix_tb.i_hamsa_floo_remote_mem_endpoint
+```
+
+## Legacy Course Setup Notes
+
 First time setup (just once)  
 ----------------------------
 

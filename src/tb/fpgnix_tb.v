@@ -448,39 +448,93 @@ assign floo_remote_rsp_i.ready = 1'b1;
 assign fpgnix.floo_req_i = floo_remote_req_i;
 assign fpgnix.floo_rsp_i = floo_remote_rsp_i;
 
-// Stage-1: drive one AXI write on masters[4] (sync to clk_sys / rstn_sys).
-typedef enum logic [2:0] {
-    FLOO_ST_IDLE = 3'd0,
-    FLOO_ST_AW   = 3'd1,
-    FLOO_ST_W    = 3'd2,
-    FLOO_ST_B    = 3'd3,
-    FLOO_ST_AR   = 3'd4,
-    FLOO_ST_R    = 3'd5,
-    FLOO_ST_DONE = 3'd6
+// End-to-end proof: drive AXI writes through HAMSA xtrn into remote FlooNoC RAM,
+// then read the same words back through the reverse path.
+typedef enum logic [3:0] {
+    FLOO_ST_IDLE       = 4'd0,
+    FLOO_ST_AW         = 4'd1,
+    FLOO_ST_W          = 4'd2,
+    FLOO_ST_B          = 4'd3,
+    FLOO_ST_NEXT_WRITE = 4'd4,
+    FLOO_ST_NEXT_READ  = 4'd5,
+    FLOO_ST_AR         = 4'd6,
+    FLOO_ST_R          = 4'd7,
+    FLOO_ST_DONE       = 4'd8
 } floo_stim_e;
 
 floo_stim_e        floo_stim_state;
 integer            floo_stim_cycles;
 integer            floo_stim_start_delay;
 integer            floo_stim_max_cycles;
+integer            floo_remote_idx;
+integer            floo_remote_words;
+integer            floo_txn_idx;
+integer            floo_pass_count;
+integer            floo_fail_count;
+integer            floo_axi_cycle;
+integer            floo_write_start_cycle [0:3];
+integer            floo_read_start_cycle  [0:3];
+integer            floo_init_idx;
+logic [31:0]       floo_remote_base_addr;
+logic [31:0]       floo_remote_data;
+logic [7:0]        floo_current_word;
+logic [31:0]       floo_current_addr;
+logic [31:0]       floo_current_data;
+
+assign floo_current_word = (floo_remote_idx + floo_txn_idx) & 8'hff;
+assign floo_current_addr = {floo_remote_base_addr[31:10], floo_current_word, 2'b00};
+assign floo_current_data = floo_remote_data + floo_txn_idx;
 
 initial begin
     floo_stim_start_delay = 500;
     floo_stim_max_cycles  = 50000;
+    floo_remote_idx       = 0;
+    floo_remote_words     = 4;
+    floo_remote_base_addr = 32'h0010_0000;
+    floo_remote_data      = 32'hF100_F100;
+    floo_txn_idx          = 0;
+    floo_pass_count       = 0;
+    floo_fail_count       = 0;
+    floo_axi_cycle        = 0;
+    for (floo_init_idx = 0; floo_init_idx < 4; floo_init_idx = floo_init_idx + 1) begin
+        floo_write_start_cycle[floo_init_idx] = 0;
+        floo_read_start_cycle[floo_init_idx]  = 0;
+    end
     void'($value$plusargs("FLOO_STIM_DELAY=%d", floo_stim_start_delay));
     void'($value$plusargs("FLOO_STIM_MAX_CYCLES=%d", floo_stim_max_cycles));
+    void'($value$plusargs("FLOO_REMOTE_IDX=%d", floo_remote_idx));
+    void'($value$plusargs("FLOO_REMOTE_WORDS=%d", floo_remote_words));
+    void'($value$plusargs("FLOO_REMOTE_ADDR=%h", floo_remote_base_addr));
+    void'($value$plusargs("FLOO_REMOTE_DATA=%h", floo_remote_data));
+    if (floo_remote_idx < 0)
+        floo_remote_idx = 0;
+    if (floo_remote_idx > 255)
+        floo_remote_idx = 255;
+    if (floo_remote_words < 1)
+        floo_remote_words = 1;
+    if (floo_remote_words > 4)
+        floo_remote_words = 4;
+    if ((floo_remote_idx + floo_remote_words) > 256)
+        floo_remote_words = 256 - floo_remote_idx;
+    $display("[FLOO_STIM] remote RAM target base=0x%08x first_word=%0d words=%0d first_data=0x%08x",
+             floo_remote_base_addr, floo_remote_idx, floo_remote_words, floo_remote_data);
 end
 
 always_ff @(posedge floo_tb_clk or negedge floo_rstn) begin : floo_axi_stim
     if (!floo_rstn) begin
         floo_stim_state  <= FLOO_ST_IDLE;
         floo_stim_cycles <= 0;
+        floo_txn_idx     <= 0;
+        floo_pass_count  <= 0;
+        floo_fail_count  <= 0;
+        floo_axi_cycle   <= 0;
         fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid  <= 1'b0;
         fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_valid  <= 1'b0;
         fpgnix.vqm_msystem_wrap.msystem.masters[4].w_valid   <= 1'b0;
         fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready   <= 1'b0;
         fpgnix.vqm_msystem_wrap.msystem.masters[4].r_ready   <= 1'b0;
     end else begin
+        floo_axi_cycle <= floo_axi_cycle + 1;
         case (floo_stim_state)
             FLOO_ST_IDLE: begin
                 fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid <= 1'b0;
@@ -489,9 +543,12 @@ always_ff @(posedge floo_tb_clk or negedge floo_rstn) begin : floo_axi_stim
                 fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready  <= 1'b0;
                 fpgnix.vqm_msystem_wrap.msystem.masters[4].r_ready  <= 1'b0;
                 if (floo_stim_cycles == floo_stim_start_delay) begin
-                    $display("[FLOO_STIM] driving AXI write on masters[4] (rstn_sys=1)");
-                    // XYAddrOffsetY=20 and tile0 is (0,0), so bit 20 routes to remote tile (0,1).
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_addr   <= 32'h0010_0000;
+                    floo_txn_idx <= 0;
+                    floo_write_start_cycle[0] <= floo_axi_cycle;
+                    $display("[FLOO_STIM] driving AXI RAM write word=%0d addr=0x%08x data=0x%08x",
+                             floo_current_word, floo_current_addr, floo_current_data);
+                    // XYAddrOffsetY=20 routes to remote tile (0,1); bits [9:2] select a RAM word.
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_addr   <= floo_current_addr;
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_id     <= 2'b0;
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_len    <= 8'h0;
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_size   <= 3'b010;
@@ -511,10 +568,11 @@ always_ff @(posedge floo_tb_clk or negedge floo_rstn) begin : floo_axi_stim
 
             FLOO_ST_AW: begin
                 if (fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_ready) begin
-                    $display("[FLOO_STIM] aw_ready @ time %0t", $time);
+                    $display("[FLOO_STIM] aw_ready word=%0d @ time %0t",
+                             floo_current_word, $time);
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid <= 1'b0;
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].w_valid  <= 1'b1;
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_data   <= 32'hF100_F100;
+                    fpgnix.vqm_msystem_wrap.msystem.masters[4].w_data   <= floo_current_data;
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].w_strb    <= 4'hF;
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].w_last   <= 1'b1;
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].w_user    <= 1'b0;
@@ -534,7 +592,8 @@ always_ff @(posedge floo_tb_clk or negedge floo_rstn) begin : floo_axi_stim
 
             FLOO_ST_W: begin
                 if (fpgnix.vqm_msystem_wrap.msystem.masters[4].w_ready) begin
-                    $display("[FLOO_STIM] w_ready @ time %0t", $time);
+                    $display("[FLOO_STIM] w_ready word=%0d @ time %0t",
+                             floo_current_word, $time);
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].w_valid <= 1'b0;
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready <= 1'b1;
                     floo_stim_state  <= FLOO_ST_B;
@@ -548,22 +607,17 @@ always_ff @(posedge floo_tb_clk or negedge floo_rstn) begin : floo_axi_stim
 
             FLOO_ST_B: begin
                 if (fpgnix.vqm_msystem_wrap.msystem.masters[4].b_valid) begin
-                    $display("[FLOO_STIM] write response @ time %0t", $time);
+                    $display("[FLOO_STIM] write response word=%0d latency_cycles=%0d @ time %0t",
+                             floo_current_word,
+                             floo_axi_cycle - floo_write_start_cycle[floo_txn_idx], $time);
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].b_ready <= 1'b0;
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_addr   <= 32'h0010_0000;
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_id     <= 2'b0;
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_len    <= 8'h0;
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_size   <= 3'b010;
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_burst  <= 2'b01;
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_lock   <= 1'b0;
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_cache  <= 4'b0;
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_prot   <= 3'b0;
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_qos    <= 4'b0;
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_region <= 4'b0;
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_user   <= 1'b0;
-                    fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_valid  <= 1'b1;
-                    $display("[FLOO_STIM] driving AXI readback on masters[4] @ time %0t", $time);
-                    floo_stim_state  <= FLOO_ST_AR;
+                    if ((floo_txn_idx + 1) < floo_remote_words) begin
+                        floo_txn_idx     <= floo_txn_idx + 1;
+                        floo_stim_state  <= FLOO_ST_NEXT_WRITE;
+                    end else begin
+                        floo_txn_idx     <= 0;
+                        floo_stim_state  <= FLOO_ST_NEXT_READ;
+                    end
                     floo_stim_cycles <= 0;
                 end else if (floo_stim_cycles >= floo_stim_max_cycles) begin
                     $display("[FLOO_STIM] TIMEOUT waiting for b_valid");
@@ -572,9 +626,50 @@ always_ff @(posedge floo_tb_clk or negedge floo_rstn) begin : floo_axi_stim
                     floo_stim_cycles <= floo_stim_cycles + 1;
             end
 
+            FLOO_ST_NEXT_WRITE: begin
+                floo_write_start_cycle[floo_txn_idx] <= floo_axi_cycle;
+                $display("[FLOO_STIM] driving AXI RAM write word=%0d addr=0x%08x data=0x%08x",
+                         floo_current_word, floo_current_addr, floo_current_data);
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_addr   <= floo_current_addr;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_id     <= 2'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_len    <= 8'h0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_size   <= 3'b010;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_burst  <= 2'b01;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_lock   <= 1'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_cache  <= 4'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_prot   <= 3'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_qos    <= 4'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_region <= 4'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_user   <= 1'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].aw_valid  <= 1'b1;
+                floo_stim_state  <= FLOO_ST_AW;
+                floo_stim_cycles <= 0;
+            end
+
+            FLOO_ST_NEXT_READ: begin
+                floo_read_start_cycle[floo_txn_idx] <= floo_axi_cycle;
+                $display("[FLOO_STIM] driving AXI RAM read word=%0d addr=0x%08x expected=0x%08x @ time %0t",
+                         floo_current_word, floo_current_addr, floo_current_data, $time);
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_addr   <= floo_current_addr;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_id     <= 2'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_len    <= 8'h0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_size   <= 3'b010;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_burst  <= 2'b01;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_lock   <= 1'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_cache  <= 4'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_prot   <= 3'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_qos    <= 4'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_region <= 4'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_user   <= 1'b0;
+                fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_valid  <= 1'b1;
+                floo_stim_state  <= FLOO_ST_AR;
+                floo_stim_cycles <= 0;
+            end
+
             FLOO_ST_AR: begin
                 if (fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_ready) begin
-                    $display("[FLOO_STIM] ar_ready @ time %0t", $time);
+                    $display("[FLOO_STIM] ar_ready word=%0d @ time %0t",
+                             floo_current_word, $time);
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].ar_valid <= 1'b0;
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].r_ready  <= 1'b1;
                     floo_stim_state  <= FLOO_ST_R;
@@ -588,15 +683,40 @@ always_ff @(posedge floo_tb_clk or negedge floo_rstn) begin : floo_axi_stim
 
             FLOO_ST_R: begin
                 if (fpgnix.vqm_msystem_wrap.msystem.masters[4].r_valid) begin
-                    $display("[FLOO_STIM] read response data=0x%08x @ time %0t",
-                             fpgnix.vqm_msystem_wrap.msystem.masters[4].r_data, $time);
-                    if (fpgnix.vqm_msystem_wrap.msystem.masters[4].r_data == 32'hF100_F100)
-                        $display("[FLOO_2X2] PASS: remote readback matched 0xF100F100");
-                    else
-                        $display("[FLOO_2X2] FAIL: remote readback expected 0xF100F100 got 0x%08x",
+                    $display("[FLOO_STIM] read response word=%0d data=0x%08x latency_cycles=%0d @ time %0t",
+                             floo_current_word,
+                             fpgnix.vqm_msystem_wrap.msystem.masters[4].r_data,
+                             floo_axi_cycle - floo_read_start_cycle[floo_txn_idx], $time);
+                    if (fpgnix.vqm_msystem_wrap.msystem.masters[4].r_data == floo_current_data) begin
+                        floo_pass_count <= floo_pass_count + 1;
+                        $display("[FLOO_2X2] PASS: remote RAM readback word=%0d data=0x%08x",
+                                 floo_current_word, floo_current_data);
+                    end else begin
+                        floo_fail_count <= floo_fail_count + 1;
+                        $display("[FLOO_2X2] FAIL: remote RAM readback word=%0d expected=0x%08x got=0x%08x",
+                                 floo_current_word, floo_current_data,
                                  fpgnix.vqm_msystem_wrap.msystem.masters[4].r_data);
+                    end
                     fpgnix.vqm_msystem_wrap.msystem.masters[4].r_ready <= 1'b0;
-                    floo_stim_state <= FLOO_ST_DONE;
+                    if ((floo_txn_idx + 1) < floo_remote_words) begin
+                        floo_txn_idx     <= floo_txn_idx + 1;
+                        floo_stim_state  <= FLOO_ST_NEXT_READ;
+                    end else begin
+                        $display("[FLOO_2X2] SUMMARY: remote RAM readbacks pass=%0d fail=%0d total=%0d",
+                                 floo_pass_count +
+                                 (fpgnix.vqm_msystem_wrap.msystem.masters[4].r_data == floo_current_data),
+                                 floo_fail_count +
+                                 (fpgnix.vqm_msystem_wrap.msystem.masters[4].r_data != floo_current_data),
+                                 floo_remote_words);
+                        if ((floo_fail_count == 0) &&
+                            (fpgnix.vqm_msystem_wrap.msystem.masters[4].r_data == floo_current_data))
+                            $display("[FLOO_2X2] PASS: %0d/%0d remote RAM readbacks matched",
+                                     floo_remote_words, floo_remote_words);
+                        else
+                            $display("[FLOO_2X2] FAIL: remote RAM readback test had mismatches");
+                        floo_stim_state <= FLOO_ST_DONE;
+                    end
+                    floo_stim_cycles <= 0;
                 end else if (floo_stim_cycles >= floo_stim_max_cycles) begin
                     $display("[FLOO_STIM] TIMEOUT waiting for r_valid");
                     floo_stim_state <= FLOO_ST_DONE;
@@ -604,7 +724,7 @@ always_ff @(posedge floo_tb_clk or negedge floo_rstn) begin : floo_axi_stim
                     floo_stim_cycles <= floo_stim_cycles + 1;
             end
 
-            default: ; // FLOO_ST_DONE — hold
+            default: ; // FLOO_ST_DONE - hold
         endcase
     end
 end

@@ -1,6 +1,6 @@
 // Minimal remote Floo endpoint for the HAMSA 2x2/full-integration demo.
 // It receives Floo request flits, unpacks them through a second Chimney, and
-// completes writes against a tiny AXI register slave.
+// completes writes against a tiny AXI RAM slave.
 
 import floo_hamsa_pkg::*;
 
@@ -25,7 +25,14 @@ module hamsa_floo_remote_mem_endpoint (
   floo_req_t    remote_floo_req_o;
   floo_rsp_t    remote_floo_rsp_o;
 
-  logic [31:0] remote_reg_q;
+  localparam int unsigned RemoteMemWords    = 256;
+  localparam int unsigned RemoteMemIdxWidth = 8;
+
+  logic [31:0] remote_mem_q [0:RemoteMemWords-1];
+  logic [RemoteMemIdxWidth-1:0] remote_aw_idx_q;
+  logic [RemoteMemIdxWidth-1:0] remote_ar_idx_q;
+  logic [31:0] remote_w_data_q;
+  logic [3:0]  remote_w_strb_q;
   logic        remote_aw_seen_q;
   logic        remote_w_seen_q;
   logic        remote_b_pending_q;
@@ -35,6 +42,19 @@ module hamsa_floo_remote_mem_endpoint (
   int unsigned remote_write_count_q;
   int unsigned remote_req_flit_count_q;
   int unsigned remote_rsp_flit_count_q;
+  int unsigned remote_mem_clear_idx;
+
+  function automatic logic [31:0] apply_wstrb(
+    input logic [31:0] old_data,
+    input logic [31:0] new_data,
+    input logic [3:0]  strb
+  );
+    apply_wstrb = old_data;
+    if (strb[0]) apply_wstrb[7:0]   = new_data[7:0];
+    if (strb[1]) apply_wstrb[15:8]  = new_data[15:8];
+    if (strb[2]) apply_wstrb[23:16] = new_data[23:16];
+    if (strb[3]) apply_wstrb[31:24] = new_data[31:24];
+  endfunction
 
   assign remote_mgr_req = '0;
 
@@ -75,7 +95,13 @@ module hamsa_floo_remote_mem_endpoint (
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      remote_reg_q            <= '0;
+      for (remote_mem_clear_idx = 0; remote_mem_clear_idx < RemoteMemWords; remote_mem_clear_idx++) begin
+        remote_mem_q[remote_mem_clear_idx] <= '0;
+      end
+      remote_aw_idx_q         <= '0;
+      remote_ar_idx_q         <= '0;
+      remote_w_data_q         <= '0;
+      remote_w_strb_q         <= '0;
       remote_aw_seen_q        <= 1'b0;
       remote_w_seen_q         <= 1'b0;
       remote_b_pending_q      <= 1'b0;
@@ -100,24 +126,32 @@ module hamsa_floo_remote_mem_endpoint (
 
       if (remote_slv_req.aw_valid && remote_slv_rsp.aw_ready) begin
         remote_aw_seen_q <= 1'b1;
+        remote_aw_idx_q  <= remote_slv_req.aw.addr[RemoteMemIdxWidth+1:2];
         remote_b_id_q    <= remote_slv_req.aw.id;
-        $display("[FLOO_2X2] remote AXI AW addr=0x%08x id=0x%0x @ time %0t",
-                 remote_slv_req.aw.addr, remote_slv_req.aw.id, $time);
+        $display("[FLOO_2X2] remote AXI RAM AW addr=0x%08x word=%0d id=0x%0x @ time %0t",
+                 remote_slv_req.aw.addr, remote_slv_req.aw.addr[RemoteMemIdxWidth+1:2],
+                 remote_slv_req.aw.id, $time);
       end
 
       if (remote_slv_req.w_valid && remote_slv_rsp.w_ready && remote_slv_req.w.last) begin
-        remote_reg_q     <= remote_slv_req.w.data;
+        remote_w_data_q  <= remote_slv_req.w.data;
+        remote_w_strb_q  <= remote_slv_req.w.strb;
         remote_w_seen_q  <= 1'b1;
-        $display("[FLOO_2X2] remote AXI W data=0x%08x write_count=%0d @ time %0t",
-                 remote_slv_req.w.data, remote_write_count_q + 1, $time);
+        $display("[FLOO_2X2] remote AXI RAM W data=0x%08x strb=0x%0x write_count=%0d @ time %0t",
+                 remote_slv_req.w.data, remote_slv_req.w.strb, remote_write_count_q + 1, $time);
       end
 
       if (!remote_b_pending_q && remote_aw_seen_q && remote_w_seen_q) begin
+        remote_mem_q[remote_aw_idx_q] <= apply_wstrb(
+          remote_mem_q[remote_aw_idx_q], remote_w_data_q, remote_w_strb_q
+        );
         remote_aw_seen_q     <= 1'b0;
         remote_w_seen_q      <= 1'b0;
         remote_b_pending_q   <= 1'b1;
         remote_write_count_q <= remote_write_count_q + 1;
-        $display("[FLOO_2X2] remote AXI write complete -> B pending count=%0d @ time %0t",
+        $display("[FLOO_2X2] remote AXI RAM write complete word=%0d data=0x%08x -> B pending count=%0d @ time %0t",
+                 remote_aw_idx_q,
+                 apply_wstrb(remote_mem_q[remote_aw_idx_q], remote_w_data_q, remote_w_strb_q),
                  remote_write_count_q + 1, $time);
       end
 
@@ -129,13 +163,16 @@ module hamsa_floo_remote_mem_endpoint (
       if (remote_slv_req.ar_valid && remote_slv_rsp.ar_ready) begin
         remote_r_pending_q <= 1'b1;
         remote_r_id_q      <= remote_slv_req.ar.id;
-        $display("[FLOO_2X2] remote AXI AR addr=0x%08x id=0x%0x @ time %0t",
-                 remote_slv_req.ar.addr, remote_slv_req.ar.id, $time);
+        remote_ar_idx_q    <= remote_slv_req.ar.addr[RemoteMemIdxWidth+1:2];
+        $display("[FLOO_2X2] remote AXI RAM AR addr=0x%08x word=%0d id=0x%0x @ time %0t",
+                 remote_slv_req.ar.addr, remote_slv_req.ar.addr[RemoteMemIdxWidth+1:2],
+                 remote_slv_req.ar.id, $time);
       end
 
       if (remote_slv_rsp.r_valid && remote_slv_req.r_ready) begin
         remote_r_pending_q <= 1'b0;
-        $display("[FLOO_2X2] remote AXI R response accepted @ time %0t", $time);
+        $display("[FLOO_2X2] remote AXI RAM R response accepted word=%0d data=0x%08x @ time %0t",
+                 remote_ar_idx_q, remote_mem_q[remote_ar_idx_q], $time);
       end
     end
   end
@@ -151,7 +188,7 @@ module hamsa_floo_remote_mem_endpoint (
 
   assign remote_slv_rsp.r_valid  = remote_r_pending_q;
   assign remote_slv_rsp.r.id     = remote_r_id_q;
-  assign remote_slv_rsp.r.data   = remote_reg_q;
+  assign remote_slv_rsp.r.data   = remote_mem_q[remote_ar_idx_q];
   assign remote_slv_rsp.r.resp   = 2'b00;
   assign remote_slv_rsp.r.last   = 1'b1;
   assign remote_slv_rsp.r.user   = '0;
